@@ -1,10 +1,10 @@
-import { Body, Controller, Post, Res } from "@nestjs/common";
+import { Body, Controller, Post, Req, Res } from "@nestjs/common";
 import { AuthService } from "./auth.service";
 import CreateUserDto from "src/dtos/CreateUserDto";
 import { LoginUserDto } from "src/dtos/LoginUserDto";
-import { Response } from "express";
+import { Response, Request } from "express";
 
-@Controller("api")
+@Controller()
 export class AuthController {
     constructor(
         private authService: AuthService
@@ -13,26 +13,28 @@ export class AuthController {
     @Post("register")
     async register(
         @Body() CreateUserDto: CreateUserDto,
-        @Res() res: Response
+        @Res() res: Response,
+        @Req() req: Request
     ) {
-        const { accessToken, refreshToken } = await this.authService.register(CreateUserDto);
-        res.cookie("refresh-token", refreshToken, {
-            httpOnly: true,
-            maxAge: 7200000
-        })
+        const accessToken = await this.authService.registerAccount(
+            CreateUserDto,
+            req.ip
+        );
+
         return res.status(201).json({ accessToken });
     }
 
     @Post("login")
     async login(
         @Body() loginUserDto: LoginUserDto,
-        @Res() res: Response
+        @Res() res: Response,
+        @Req() req: Request
     ) {
-        const { accessToken, refreshToken } = await this.authService.login(loginUserDto)
-        res.cookie("refresh-token", refreshToken, {
-            httpOnly: true,
-            maxAge: 7200000
-        })
+        const accessToken = await this.authService.loginAccount(
+            loginUserDto,
+            req.ip
+        );
+
         return res.status(200).json({ accessToken });
     }
 }

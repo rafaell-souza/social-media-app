@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common";
-import { IUserCreate } from "src/interfaces/iUserCreate";
-import { IUserUpdate } from "src/interfaces/IUserUpdate";
-import { PrismaService } from "src/prisma.service";
+import { IUserCreate } from "../interfaces/iUserCreate";
+import { PrismaService } from "../prisma.service";
+import { IUserUpdate } from "../interfaces/iUserUpdate";
 import { v4 as uuid } from 'uuid';
 
 @Injectable()
@@ -34,6 +34,10 @@ export class UserRepository {
                     { email: email },
                     { phone: phone }
                 ]
+            },
+            select: {
+                password: true,
+                id: true
             }
         })
     }
@@ -51,14 +55,14 @@ export class UserRepository {
     }
 
     async update(id: string, data: IUserUpdate) {
-        return await this.prisma.user.update({
+        await this.prisma.user.update({
             where: { id },
             data
         })
     }
 
     async delete(id: string) {
-        return await this.prisma.user.delete({
+        await this.prisma.user.delete({
             where: { id }
         })
     }
