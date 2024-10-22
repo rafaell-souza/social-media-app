@@ -3,6 +3,9 @@ import { v4 as uuid } from "uuid";
 import { BadRequest, Conflict, NoContent } from "../../exceptions/excepetion";
 import * as bcrypt from "bcrypt";
 import { HashService } from "../../helpers/hash.service";
+import { TokenRepository } from "../../repository/TokenRepository";
+import { JwtService } from "../../helpers/jwt.service";
+import { PrismaService } from "../../prisma.service";
 
 jest.mock("../../repository/UserRepository")
 
@@ -42,9 +45,13 @@ describe("UserUseCases", () => {
 
     beforeAll(async () => {
         const { UserRepository } = factory()
+        const prisma = new PrismaService()
         const userRepo = new UserRepository()
         const hashService = new HashService()
-        userUseCases = new UserUseCases(userRepo, hashService)
+        const tokenRepo = new TokenRepository(prisma)
+        const jwtService = new JwtService()
+
+        userUseCases = new UserUseCases(userRepo, hashService, tokenRepo, jwtService)
 
         const hash = await bcrypt.hash("novasenha13", 10)
         testObject = [
@@ -79,13 +86,13 @@ describe("UserUseCases", () => {
                     email: "",
                     phone: "(11) 11111-1111",
                     password: "novasenha13"
-                })
+                }, "111.111")
 
                 await userUseCases.createAccount({
                     name: "algo",
                     email: "abcdefg@gmail.com",
                     password: "novasenha13"
-                });
+                }, "111.111");
             }
             catch (error) {
                 if (error.message.includes("phone")) {
@@ -103,10 +110,10 @@ describe("UserUseCases", () => {
             email: "example@gmail.com",
             phone: "(01) 10110-1010",
             password: "Password123"
-        });
+        }, "111.111");
 
         expect(typeof id).toBe("string");
-        expect(id).toHaveLength(36);
+        expect(id).toHaveLength(253);
     })
 
     // findAccount method
@@ -127,8 +134,8 @@ describe("UserUseCases", () => {
                     }
                 ]
 
-                await userUseCases.findAccount(data[0])
-                await userUseCases.findAccount(data[1])
+                await userUseCases.findAccount(data[0], "111.111")
+                await userUseCases.findAccount(data[1], "111.111")
 
             } catch (error) {
                 if (error.message.includes("phone")) {
@@ -147,7 +154,7 @@ describe("UserUseCases", () => {
                     email: "abcdefg@gmail.com",
                     phone: "",
                     password: "novasenha1"
-                })
+                }, "111.111")
             }
             catch (error) {
                 expect(error).toBeInstanceOf(BadRequest)
@@ -161,9 +168,9 @@ describe("UserUseCases", () => {
             email: "",
             phone: "(00) 00000-0000",
             password: "novasenha13"
-        })
+        }, "111.111")
 
         expect(typeof id).toBe("string");
-        expect(id).toHaveLength(36)
+        expect(id).toHaveLength(253)
     })
 })

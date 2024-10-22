@@ -14,7 +14,7 @@ describe("route: api/register", () => {
 
     // /api/register
     test("should return the new user's access token", async () => {
-        const response = await fetch("http://localhost:9000/api/register",
+        const response = await fetch("http://localhost:9000/auth/register",
             {
                 method: "POST",
                 headers: {

@@ -7,6 +7,12 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Token {
+  id Int @id @default(autoincrement())
+  token String @unique
+  status String
+}
+
 model Profile {
   id           Int      @id @default(autoincrement())
   photo        String?
@@ -26,7 +32,7 @@ model User {
   id       String   @id @db.VarChar(36)
   name     String   @db.VarChar(50)
   email    String?  @unique @db.VarChar(50)
-  password String   @db.VarChar(70)
+  password String?   @db.VarChar(70)
   phone    String?  @unique @db.VarChar(20)
   Profile  Profile?
 }

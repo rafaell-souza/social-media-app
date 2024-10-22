@@ -6,13 +6,16 @@ import { UserUseCases } from "../../UseCases/UserUseCases.service";
 import { UserRepository } from "src/repository/UserRepository";
 import { PrismaService } from "src/prisma.service";
 import { HashService } from "src/helpers/hash.service";
+import { TokenRepository } from "src/repository/TokenRepository";
+import { GoogleStrategy } from "./google.strategy";
 
 @Module({
     controllers: [AuthController],
     providers: [
         AuthService, JwtService,
         UserUseCases, UserRepository,
-        PrismaService, HashService
+        PrismaService, HashService,
+        TokenRepository, GoogleStrategy
     ]
 })
 export class AuthModule { }

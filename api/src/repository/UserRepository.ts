@@ -18,7 +18,9 @@ export class UserRepository {
                 password: data.password,
                 phone: data?.phone,
                 Profile: {
-                    create: {}
+                    create: {
+                        photo: data.photo
+                    }
                 }
             },
             select: {

@@ -9,7 +9,6 @@ const options = {
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  app.setGlobalPrefix('api');
   app.enableCors();
   app.useGlobalPipes(new ValidationPipe(options));
   await app.listen(9000);
