@@ -5,24 +5,15 @@ import {
     Matches,
     MaxLength,
     MinLength,
-    ValidateIf
 } from 'class-validator';
 
 
 export class LoginUserDto {
-    @ValidateIf((o) => !o.phone)
-    @IsNotEmpty({message: "Email or phone is required"})
+    @IsNotEmpty({ message: "Email is required" })
     @IsEmail()
     @MinLength(5)
     @MaxLength(50)
-    email?: string;
-
-    @ValidateIf((o) => !o.email)
-    @IsNotEmpty({message: "Email or phone is required"})
-    @MinLength(15)
-    @MaxLength(15)
-    @Matches(/^\(\d{2}\) \d{5}-\d{4}$/)
-    phone?: string
+    email: string;
 
     @IsString()
     @IsNotEmpty()

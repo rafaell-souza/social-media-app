@@ -1,7 +1,6 @@
 export interface IUserCreate {
     name: string;
-    email?: string;
+    email: string;
     password?: string;
-    phone?: string;
     photo?: string;
 }

@@ -16,47 +16,60 @@ export class UserUseCases {
         private jwtService: JwtService
     ) { }
 
-    async createAccount(data: IUserCreate, ip: string): Promise<string> {
-        const Account = await this.userRepo.findByField(
-            data.email, data.phone
-        )
+    async createAccount(data: IUserCreate): Promise<string> {
+        const myAccount = await this.userRepo.findByEmail(data.email)
 
-        if (Account) {
-            const field = data.email ? "email" : "phone";
-            throw new Conflict(`This ${field} is already in use.`);
-        }
+        if (myAccount) throw new Conflict("Email is already in use");
 
-        if (data.password) {
-            data.password = await this.hashService.hash(data.password);
-        }
+        data.password = await this.hashService.hash(data.password);
 
-        const account = await this.userRepo.create(data);
-        const { accessToken, refreshToken } = this.jwtService.generate(account.id, ip);
+        const { id, email, verified } = await this.userRepo.create(data);
+        const tokens = this.jwtService.generate(id, email, verified);
 
-        await this.tokenRepo.create(refreshToken, "accepted")
-        return accessToken;
+        const { access_token, refresh_token } = tokens;
+        await this.tokenRepo.create(refresh_token, id);
+        return access_token;
     }
 
 
-    async findAccount(data: IUserLogin, ip: string): Promise<string> {
-        const userAccount = await this.userRepo.findByField(
-            data.email, data.phone
-        )
+    async googleAccount(data: IUserCreate): Promise<string> {
+        const myAccount = await this.userRepo.findByEmail(data.email)
 
-        const message = `${"There's no account registered with the provided "}${data.email ? "email" : "phone"}`
+        if (myAccount) {
+            const { id, email, verified } = myAccount;
+            const tokens = this.jwtService.generate(id, email, verified);
 
+            const { access_token, refresh_token } = tokens;
+            await this.tokenRepo.update(refresh_token, id);
+            return access_token;
+        }
+
+        const { id, email, verified } = await this.userRepo.create(data);
+        const tokens = this.jwtService.generate(id, email, verified);
+
+        const { access_token, refresh_token } = tokens;
+        await this.tokenRepo.create(refresh_token, id);
+        return access_token;
+    }
+
+
+    async findAccount(data: IUserLogin): Promise<string> {
+        const userAccount = await this.userRepo.findByEmail(data.email)
+        const message = `${"There's no account registered with the provided email"}`
         if (!userAccount) throw new NoContent(message)
 
+        const { id, email, password, verified } = userAccount;
+
         const isPasswordEqual = await this.hashService.compare(
-            data.password, userAccount.password
+            data.password, password
         )
 
         if (!isPasswordEqual) throw new BadRequest("Incorrect password")
-        const { accessToken, refreshToken } = this.jwtService.generate(
-            userAccount.id, ip
-        );
 
-        await this.tokenRepo.create(refreshToken, "accepted")
-        return accessToken;
+        const tokens = this.jwtService.generate(id, email, verified);
+        const { access_token, refresh_token } = tokens;
+
+        await this.tokenRepo.update(refresh_token, id);
+        return access_token;
     }
 }

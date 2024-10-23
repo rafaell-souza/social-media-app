@@ -1,5 +1,6 @@
 export interface ITokenData {
-    id: string;
+    sub: string;
     createdAt: string;
-    ip: string;
+    email: string;
+    verified: boolean;
 }

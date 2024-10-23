@@ -14,9 +14,8 @@ export class UserRepository {
             data: {
                 id: userUuid,
                 name: data.name,
-                email: data?.email,
+                email: data.email,
                 password: data.password,
-                phone: data?.phone,
                 Profile: {
                     create: {
                         photo: data.photo
@@ -24,22 +23,21 @@ export class UserRepository {
                 }
             },
             select: {
-                id: true
+                id: true,
+                email: true,
+                verified: true
             }
         })
     }
 
-    async findByField(email: string, phone: string) {
+    async findByEmail(email: string) {
         return await this.prisma.user.findFirst({
-            where: {
-                OR: [
-                    { email: email },
-                    { phone: phone }
-                ]
-            },
+            where: { email },
             select: {
+                id: true,
+                email: true,
                 password: true,
-                id: true
+                verified: true
             }
         })
     }

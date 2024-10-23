@@ -6,33 +6,39 @@ import { ITokenData } from "src/interfaces/ITokenData";
 
 @Injectable()
 export class JwtService {
-    generate(id: string, ip: string) {
+    generate(
+        id: string,
+        email: string,
+        verified: boolean
+    ) {
+
         const { JWT_ACCESS_TOKEN_SECRET } = process.env;
         const { JWT_REFRESH_TOKEN_SECRET } = process.env;
 
-        const accessToken = jwt.sign({
-            id: id,
+        const access_token = jwt.sign({
+            sub: id,
             createdAt: format(new Date(), "Pp"),
-            ip: ip
+            email: email,
+            verified: verified
         }, JWT_ACCESS_TOKEN_SECRET, {
-            expiresIn: "5m",
+            expiresIn: "10m",
         })
 
-        const refreshToken = jwt.sign({
-            id: id,
-            ip: ip
+        const refresh_token = jwt.sign({
+            sub: id,
         }, JWT_REFRESH_TOKEN_SECRET, {
             expiresIn: "30d"
         })
 
-        return { accessToken, refreshToken }
+        return { access_token, refresh_token };
     }
 
     decode(token: string) {
         const decoded = jwt.decode(token) as ITokenData;
         return {
-            id: decoded.id,
-            ip: decoded.ip,
+            sub: decoded.sub,
+            email: decoded.email,
+            verified: decoded.verified,
             createdAt: decoded.createdAt
         } = decoded;
     }

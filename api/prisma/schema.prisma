@@ -8,9 +8,17 @@ datasource db {
 }
 
 model Token {
-  id Int @id @default(autoincrement())
-  token String @unique
-  status String
+  id     Int    @id @default(autoincrement())
+  refreshtoken  String @unique
+  userId String @db.VarChar(36) @unique
+
+  User   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model EmailVerification {
+  id    Int    @id @default(autoincrement())
+  email String @unique
+  code String @db.VarChar(70)
 }
 
 model Profile {
@@ -25,14 +33,18 @@ model Profile {
   url          String?
   createdAt    DateTime @default(now())
   userId       String   @unique @db.VarChar(36)
+
   User         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model User {
   id       String   @id @db.VarChar(36)
   name     String   @db.VarChar(50)
-  email    String?  @unique @db.VarChar(50)
-  password String?   @db.VarChar(70)
+  email    String  @unique @db.VarChar(50)
+  password String?  @db.VarChar(70)
   phone    String?  @unique @db.VarChar(20)
+  verified Boolean  @default(false)
+
   Profile  Profile?
+  Token    Token?
 }

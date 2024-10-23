@@ -2,13 +2,11 @@ import { JwtService } from "../../helpers/jwt.service";
 
 describe("Jwt.service",
     () => {
-        test("should return an object with 'accessToken' and 'refreshToken' properities", () => {
-            const data = { id: "123", ip: "12.1.1" }
-
+        test("should return an object with 'access&refresh_token' properities", () => {
             const jwtService = new JwtService();
-            const results = jwtService.generate(data.id, data.ip);
+            const results = jwtService.generate( "123", 'some@gmail.com', true );
 
-            expect(results).toHaveProperty("accessToken")
-            expect(results).toHaveProperty("refreshToken")
+            expect(results).toHaveProperty("access_token")
+            expect(results).toHaveProperty("refresh_token")
         })
     });
