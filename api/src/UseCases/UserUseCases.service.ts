@@ -6,6 +6,7 @@ import { IUserLogin } from "../interfaces/IUserLogin";
 import { HashService } from "../helpers/hash.service";
 import { TokenRepository } from "../repository/TokenRepository";
 import { JwtService } from "../helpers/jwt.service";
+import { v4 as uuid } from 'uuid';
 
 @Injectable()
 export class UserUseCases {
@@ -21,14 +22,15 @@ export class UserUseCases {
 
         if (myAccount) throw new Conflict("Email is already in use");
 
+        data.id = uuid();
         data.password = await this.hashService.hash(data.password);
+        data.verified = false;
+        
+        const tokens = this.jwtService.generate(data.id, data.email, data.verified);
+        data.refresh_token = tokens.refresh_token;
 
-        const { id, email, verified } = await this.userRepo.create(data);
-        const tokens = this.jwtService.generate(id, email, verified);
-
-        const { access_token, refresh_token } = tokens;
-        await this.tokenRepo.create(refresh_token, id);
-        return access_token;
+        await this.userRepo.create(data);
+        return tokens.access_token;
     }
 
 
@@ -44,17 +46,20 @@ export class UserUseCases {
             return access_token;
         }
 
-        const { id, email, verified } = await this.userRepo.create(data);
-        const tokens = this.jwtService.generate(id, email, verified);
+        data.id = uuid();
+        data.verified = true;
+        
+        const tokens = this.jwtService.generate(data.id, data.email, data.verified);
+        data.refresh_token = tokens.refresh_token;
 
-        const { access_token, refresh_token } = tokens;
-        await this.tokenRepo.create(refresh_token, id);
-        return access_token;
+        await this.userRepo.create(data);
+        return tokens.access_token;
     }
 
 
     async findAccount(data: IUserLogin): Promise<string> {
         const userAccount = await this.userRepo.findByEmail(data.email)
+        
         const message = `${"There's no account registered with the provided email"}`
         if (!userAccount) throw new NoContent(message)
 

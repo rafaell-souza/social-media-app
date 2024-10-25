@@ -8,17 +8,17 @@ import { JwtService } from "src/helpers/jwt.service";
 
 @Injectable()
 export class AuthService {
-    constructor (
+    constructor(
         private userUseCases: UserUseCases,
         private tokenRepo: TokenRepository,
         private jwtService: JwtService
     ) { }
 
-    async registerAccount(data: IUserCreate) {
+    async registerAccount(data) {
         return await this.userUseCases.createAccount(data);
     }
 
-    async loginAccount(data: IUserLogin) {
+    async loginAccount(data) {
         return await this.userUseCases.findAccount(data)
     }
 
@@ -29,7 +29,7 @@ export class AuthService {
         await this.tokenRepo.delete(sub);
     }
 
-    async googleAccount(data: IUserCreate) {
+    async googleAccount(data) {
         return await this.userUseCases.googleAccount(data);
     }
 }

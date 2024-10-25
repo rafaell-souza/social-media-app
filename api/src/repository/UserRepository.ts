@@ -2,17 +2,15 @@ import { Injectable } from "@nestjs/common";
 import { IUserCreate } from "../interfaces/iUserCreate";
 import { PrismaService } from "../prisma.service";
 import { IUserUpdate } from "../interfaces/iUserUpdate";
-import { v4 as uuid } from 'uuid';
 
 @Injectable()
 export class UserRepository {
     constructor(private prisma: PrismaService) { }
 
     async create(data: IUserCreate) {
-        const userUuid = uuid();
         return await this.prisma.user.create({
             data: {
-                id: userUuid,
+                id: data.id,
                 name: data.name,
                 email: data.email,
                 password: data.password,
@@ -20,12 +18,12 @@ export class UserRepository {
                     create: {
                         photo: data.photo
                     }
+                },
+                Token: {
+                    create: {
+                        refreshtoken: data.refresh_token
+                    }
                 }
-            },
-            select: {
-                id: true,
-                email: true,
-                verified: true
             }
         })
     }

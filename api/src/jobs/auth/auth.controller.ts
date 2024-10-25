@@ -17,7 +17,7 @@ export class AuthController {
         @Res() res: Response,
         @Req() req: Request
     ) {
-        const access_token = await this.authService.registerAccount( CreateUserDto );
+        const access_token = await this.authService.registerAccount(CreateUserDto);
         return res.status(201).json({ access_token });
     }
 
@@ -27,7 +27,7 @@ export class AuthController {
         @Res() res: Response,
         @Req() req: Request
     ) {
-        const access_token = await this.authService.loginAccount( loginUserDto );
+        const access_token = await this.authService.loginAccount(loginUserDto);
         return res.status(200).json({ access_token });
     }
 
