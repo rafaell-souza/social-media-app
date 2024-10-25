@@ -3,4 +3,5 @@ export interface IUserUpdate {
     email?: string;
     password?: string;
     phone?: string;
+    verified?: boolean
 }

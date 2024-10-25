@@ -8,6 +8,7 @@ import { PrismaService } from "src/prisma.service";
 import { HashService } from "src/helpers/hash.service";
 import { TokenRepository } from "src/repository/TokenRepository";
 import { GoogleStrategy } from "../../helpers/google.strategy";
+import { SendEmailService } from "src/helpers/smtp/SendEmail.service";
 
 @Module({
     controllers: [AuthController],
@@ -15,7 +16,8 @@ import { GoogleStrategy } from "../../helpers/google.strategy";
         AuthService, JwtService,
         UserUseCases, UserRepository,
         PrismaService, HashService,
-        TokenRepository, GoogleStrategy
+        TokenRepository, GoogleStrategy,
+        SendEmailService
     ]
 })
 export class AuthModule { }

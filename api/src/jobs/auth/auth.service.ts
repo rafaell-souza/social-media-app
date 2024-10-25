@@ -1,17 +1,17 @@
 import { Injectable } from "@nestjs/common";
-import { IUserCreate } from "src/interfaces/iUserCreate";
-import { IUserLogin } from "src/interfaces/IUserLogin";
 import { UserUseCases } from "../../UseCases/UserUseCases.service";
 import { TokenRepository } from "../../repository/TokenRepository";
 import { Request } from "express";
 import { JwtService } from "src/helpers/jwt.service";
+import { UserRepository } from "src/repository/UserRepository";
 
 @Injectable()
 export class AuthService {
     constructor(
         private userUseCases: UserUseCases,
         private tokenRepo: TokenRepository,
-        private jwtService: JwtService
+        private jwtService: JwtService,
+        private userRepo: UserRepository
     ) { }
 
     async registerAccount(data) {
@@ -31,5 +31,10 @@ export class AuthService {
 
     async googleAccount(data) {
         return await this.userUseCases.googleAccount(data);
+    }
+
+    async confirmEmail(token: string) {
+        const { sub } = this.jwtService.decode(token) as { sub: string }
+        if ( sub ) return await this.userRepo.update(sub, { verified: true })
     }
 }

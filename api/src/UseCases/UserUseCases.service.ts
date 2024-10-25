@@ -7,6 +7,7 @@ import { HashService } from "../helpers/hash.service";
 import { TokenRepository } from "../repository/TokenRepository";
 import { JwtService } from "../helpers/jwt.service";
 import { v4 as uuid } from 'uuid';
+import { SendEmailService } from "src/helpers/smtp/SendEmail.service";
 
 @Injectable()
 export class UserUseCases {
@@ -14,23 +15,28 @@ export class UserUseCases {
         private userRepo: UserRepository,
         private hashService: HashService,
         private tokenRepo: TokenRepository,
-        private jwtService: JwtService
+        private jwtService: JwtService,
+        private sendEmailService: SendEmailService
     ) { }
 
-    async createAccount(data: IUserCreate): Promise<string> {
+    async createAccount(data: IUserCreate) {
         const myAccount = await this.userRepo.findByEmail(data.email)
 
         if (myAccount) throw new Conflict("Email is already in use");
 
         data.id = uuid();
         data.password = await this.hashService.hash(data.password);
-        data.verified = false;
         
-        const tokens = this.jwtService.generate(data.id, data.email, data.verified);
+        const tokens = this.jwtService.generate(data.id);
         data.refresh_token = tokens.refresh_token;
 
-        await this.userRepo.create(data);
-        return tokens.access_token;
+        const mailSent = await this.sendEmailService.to(
+            data.name, 
+            data.email, 
+            tokens.access_token
+        )
+
+        if (mailSent) return await this.userRepo.create(data);
     }
 
 
@@ -38,8 +44,8 @@ export class UserUseCases {
         const myAccount = await this.userRepo.findByEmail(data.email)
 
         if (myAccount) {
-            const { id, email, verified } = myAccount;
-            const tokens = this.jwtService.generate(id, email, verified);
+            const { id } = myAccount;
+            const tokens = this.jwtService.generate(id);
 
             const { access_token, refresh_token } = tokens;
             await this.tokenRepo.update(refresh_token, id);
@@ -49,7 +55,7 @@ export class UserUseCases {
         data.id = uuid();
         data.verified = true;
         
-        const tokens = this.jwtService.generate(data.id, data.email, data.verified);
+        const tokens = this.jwtService.generate(data.id);
         data.refresh_token = tokens.refresh_token;
 
         await this.userRepo.create(data);
@@ -63,7 +69,7 @@ export class UserUseCases {
         const message = `${"There's no account registered with the provided email"}`
         if (!userAccount) throw new NoContent(message)
 
-        const { id, email, password, verified } = userAccount;
+        const { id, password } = userAccount;
 
         const isPasswordEqual = await this.hashService.compare(
             data.password, password
@@ -71,7 +77,7 @@ export class UserUseCases {
 
         if (!isPasswordEqual) throw new BadRequest("Incorrect password")
 
-        const tokens = this.jwtService.generate(id, email, verified);
+        const tokens = this.jwtService.generate(id);
         const { access_token, refresh_token } = tokens;
 
         await this.tokenRepo.update(refresh_token, id);

@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Req, Res, UseGuards, Get } from "@nestjs/common";
+import { Body, Controller, Post, Req, Res, UseGuards, Get, Put, Param, HttpCode } from "@nestjs/common";
 import { AuthService } from "./auth.service";
 import CreateUserDto from "src/dtos/CreateUserDto";
 import { LoginUserDto } from "src/dtos/LoginUserDto";
@@ -14,24 +14,20 @@ export class AuthController {
     @Post("register")
     async register(
         @Body() CreateUserDto: CreateUserDto,
-        @Res() res: Response,
-        @Req() req: Request
     ) {
-        const access_token = await this.authService.registerAccount(CreateUserDto);
-        return res.status(201).json({ access_token });
+        return await this.authService.registerAccount(CreateUserDto);
     }
 
     @Post("login")
+    @HttpCode(200)
     async login(
         @Body() loginUserDto: LoginUserDto,
-        @Res() res: Response,
-        @Req() req: Request
     ) {
-        const access_token = await this.authService.loginAccount(loginUserDto);
-        return res.status(200).json({ access_token });
+        return await this.authService.loginAccount(loginUserDto);
     }
 
     @Post("logout")
+    @HttpCode(200)
     async logout(
         @Res() res: Response,
         @Req() req: Request
@@ -59,5 +55,10 @@ export class AuthController {
 
         const access_token = await this.authService.googleAccount(data);
         return res.status(201).json({ access_token });
+    }
+
+    @Put("confirm/:token")
+    async confirmEmail( @Param() token: string ) {
+        return await this.authService.confirmEmail(token)
     }
 }

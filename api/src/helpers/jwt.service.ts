@@ -2,15 +2,11 @@ import { Injectable } from "@nestjs/common";
 import * as jwt from "jsonwebtoken";
 import "dotenv/config";
 import { format } from "date-fns";
-import { ITokenData } from "src/interfaces/ITokenData";
+import { ITokenData } from "../interfaces/ITokenData";
 
 @Injectable()
 export class JwtService {
-    generate(
-        id: string,
-        email: string,
-        verified: boolean
-    ) {
+    generate( id: string ) {
 
         const { JWT_ACCESS_TOKEN_SECRET } = process.env;
         const { JWT_REFRESH_TOKEN_SECRET } = process.env;
@@ -18,8 +14,6 @@ export class JwtService {
         const access_token = jwt.sign({
             sub: id,
             createdAt: format(new Date(), "Pp"),
-            email: email,
-            verified: verified
         }, JWT_ACCESS_TOKEN_SECRET, {
             expiresIn: "10m",
         })
@@ -37,8 +31,6 @@ export class JwtService {
         const decoded = jwt.decode(token) as ITokenData;
         return {
             sub: decoded.sub,
-            email: decoded.email,
-            verified: decoded.verified,
             createdAt: decoded.createdAt
         } = decoded;
     }
