@@ -36,7 +36,6 @@ model User {
   name     String   @db.VarChar(50)
   email    String  @unique @db.VarChar(50)
   password String?  @db.VarChar(70)
-  phone    String?  @unique @db.VarChar(20)
   verified Boolean  @default(false)
 
   Profile  Profile?

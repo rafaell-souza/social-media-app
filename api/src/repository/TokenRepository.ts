@@ -26,9 +26,6 @@ export class TokenRepository {
         return await this.prisma.token.findFirst({
             where: {
                 userId: userId
-            },
-            select: {
-                refreshtoken: true
             }
         });
     }

@@ -3,10 +3,11 @@ import * as jwt from "jsonwebtoken";
 import "dotenv/config";
 import { format } from "date-fns";
 import { ITokenData } from "../interfaces/ITokenData";
+import { Unauthorized } from "src/exceptions/excepetion";
 
 @Injectable()
 export class JwtService {
-    generate( id: string ) {
+    generate(id: string) {
 
         const { JWT_ACCESS_TOKEN_SECRET } = process.env;
         const { JWT_REFRESH_TOKEN_SECRET } = process.env;
@@ -33,5 +34,10 @@ export class JwtService {
             sub: decoded.sub,
             createdAt: decoded.createdAt
         } = decoded;
+    }
+
+    verify(token: string, secret: string) {
+        const decode = jwt.verify(token, secret) as ITokenData;
+        return decode.sub
     }
 }
