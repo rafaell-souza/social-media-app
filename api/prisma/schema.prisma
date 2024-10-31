@@ -7,12 +7,14 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Token {
-  id     Int    @id @default(autoincrement())
-  refreshtoken  String @unique
-  userId String @db.VarChar(36) @unique
+model Tokens {
+  id           Int    @id @default(autoincrement())
+  refreshtoken String? @unique
+  confirmationToken String? @unique
+  resetPasswordToken String? @unique
 
-  User   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId       String @unique @db.VarChar(36)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Profile {
@@ -28,16 +30,16 @@ model Profile {
   createdAt    DateTime @default(now())
   userId       String   @unique @db.VarChar(36)
 
-  User         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model User {
-  id       String   @id @db.VarChar(36)
-  name     String   @db.VarChar(50)
+  id       String  @id @db.VarChar(36)
+  name     String  @db.VarChar(50)
   email    String  @unique @db.VarChar(50)
-  password String?  @db.VarChar(70)
-  verified Boolean  @default(false)
+  password String? @db.VarChar(70)
+  verified Boolean @default(false)
 
-  Profile  Profile?
-  Token    Token?
+  profile   Profile?
+  token     Tokens?
 }

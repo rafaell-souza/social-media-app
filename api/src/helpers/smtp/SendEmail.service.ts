@@ -1,4 +1,5 @@
-import { htmlCode , transporter } from "./config";
+import { InternalError } from "src/exceptions/excepetion";
+import transporter from "./config";
 import { Injectable } from "@nestjs/common";
 
 @Injectable()
@@ -8,11 +9,15 @@ export class SendEmailService {
         email: string,
         access_token: string
     ) {
-        return await transporter.sendMail({
-            subject: "Email confirmation",
-            from: "Rafael Souza <rafaellsza03@gmail.com>",
-            to: email,
-            html: htmlCode (access_token, name)
-        });
+        try {
+            await transporter.sendMail({
+                to: email,
+                from: "No reply",
+                html: `Oi ${name} seu token é ${access_token}`
+            } as any)
+        }
+        catch (error) {
+            throw new InternalError(`Error: ${error}`)
+        }
     }
 }

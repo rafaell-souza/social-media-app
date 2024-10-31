@@ -2,42 +2,48 @@ import { Injectable } from "@nestjs/common";
 import * as jwt from "jsonwebtoken";
 import "dotenv/config";
 import { format } from "date-fns";
-import { ITokenData } from "../interfaces/ITokenData";
-import { Unauthorized } from "src/exceptions/excepetion";
 
 @Injectable()
 export class JwtService {
-    generate(id: string) {
+    refresh_token_secret: string | undefined;
+    access_token_secret: string | undefined;
 
-        const { JWT_ACCESS_TOKEN_SECRET } = process.env;
-        const { JWT_REFRESH_TOKEN_SECRET } = process.env;
+    constructor() {
+        this.access_token_secret = process.env.JWT_ACCESS_TOKEN_SECRET;
+        this.refresh_token_secret = process.env.JWT_REFRESH_TOKEN_SECRET;
 
-        const access_token = jwt.sign({
-            sub: id,
+        if (!this.access_token_secret || !this.refresh_token_secret) {
+            console.log("Environment variables not defined");
+            return;
+        }
+    }
+
+    createAccessToken(
+        id: string,
+    ): string {
+        return jwt.sign({
+            id: id,
             createdAt: format(new Date(), "Pp"),
-        }, JWT_ACCESS_TOKEN_SECRET, {
-            expiresIn: "10m",
+        }, this.access_token_secret, {
+            expiresIn: "15m"
         })
+    }
 
-        const refresh_token = jwt.sign({
-            sub: id,
-        }, JWT_REFRESH_TOKEN_SECRET, {
+    createRefreshToken(id: string): string {
+        return jwt.sign({
+            id: id,
+        }, this.refresh_token_secret, {
             expiresIn: "30d"
         })
-
-        return { access_token, refresh_token };
     }
 
     decode(token: string) {
-        const decoded = jwt.decode(token) as ITokenData;
-        return {
-            sub: decoded.sub,
-            createdAt: decoded.createdAt
-        } = decoded;
+        const decode = jwt.decode(token) as { id: string };
+        return decode.id
     }
 
-    verify(token: string, secret: string) {
-        const decode = jwt.verify(token, secret) as ITokenData;
-        return decode.sub
+    verify(token: string) {
+        const decode = jwt.verify(token, this.access_token_secret) as { id: string };
+        return decode.id
     }
 }

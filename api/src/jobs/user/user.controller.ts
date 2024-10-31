@@ -16,7 +16,7 @@ export class UserController {
     async deleteUserData() {}
 
     @Put()
-    async updateUserData(@Req() request: Request) {
+    async userPassUpdate(@Req() request: Request) {
         
     } 
 }

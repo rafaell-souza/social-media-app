@@ -1,3 +1,4 @@
+import { ITokens } from "src/interfaces/ITokensUpdate";
 import { PrismaService } from "../prisma.service";
 import { Injectable } from "@nestjs/common";
 
@@ -5,39 +6,16 @@ import { Injectable } from "@nestjs/common";
 export class TokenRepository {
     constructor(private prisma: PrismaService) { }
 
-    async create(token: string, userId: string) {
-        await this.prisma.token.create({
-            data: {
-                refreshtoken: token,
-                userId: userId
-            }
+    async find(id: string) {
+        return await this.prisma.tokens.findFirst({
+            where: { userId: id }
         });
     }
 
-    async delete(userId: string) {
-        await this.prisma.token.deleteMany({
-            where: {
-                userId: userId
-            }
-        });
-    }
-
-    async find(userId: string) {
-        return await this.prisma.token.findFirst({
-            where: {
-                userId: userId
-            }
-        });
-    }
-
-    async update(token: string, userId: string) {
-        await this.prisma.token.update({
-            where: {
-                userId: userId
-            },
-            data: {
-                refreshtoken: token
-            }
+    async update(id: string, data: ITokens) {
+        await this.prisma.tokens.update({
+            where: { userId: id },
+            data
         });
     }
 }

@@ -35,3 +35,9 @@ export class NoContent extends HttpException {
         super(message, HttpStatus.NO_CONTENT)
     }
 }
+
+export class InternalError extends HttpException {
+    constructor(message: string) {
+        super(message, HttpStatus.INTERNAL_SERVER_ERROR)
+    }
+}

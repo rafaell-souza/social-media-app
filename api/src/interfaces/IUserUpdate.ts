@@ -1,5 +1,5 @@
 export interface IUserUpdate {
-    newPassword?: string;
+    password?: string;
     oldPassword?: string;
-    verified: boolean;
+    verified?: boolean
 }

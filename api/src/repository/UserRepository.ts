@@ -1,27 +1,45 @@
 import { Injectable } from "@nestjs/common";
-import { IUserCreate } from "../interfaces/iUserCreate";
 import { PrismaService } from "../prisma.service";
-import { IUserUpdate } from "../interfaces/iUserUpdate";
+import { IUserUpdate } from "../interfaces/IUserUpdate";
+import { IUserCreateGoogle } from "src/interfaces/IUserCreateGoogle";
+import { IUserCreate } from "src/interfaces/iUserCreate";
 
 @Injectable()
 export class UserRepository {
     constructor(private prisma: PrismaService) { }
 
     async create(data: IUserCreate) {
-        await this.prisma.user.create({
+        return await this.prisma.user.create({
             data: {
                 id: data.id,
                 name: data.name,
                 email: data.email,
                 password: data.password,
-                Profile: {
+                profile: { create: {} },
+                token: {
+                    create: {
+                        confirmationToken: data.confirmationToken,
+                    }
+                }
+            }
+        })
+    }
+
+    async googleCreate(data: IUserCreateGoogle) {
+        return await this.prisma.user.create({
+            data: {
+                id: data.id,
+                name: data.name,
+                email: data.email,
+                verified: data.verified,
+                profile: {
                     create: {
                         photo: data.photo
                     }
                 },
-                Token: {
+                token: {
                     create: {
-                        refreshtoken: data.refresh_token
+                        refreshtoken: data.refreshtoken
                     }
                 }
             }
@@ -31,12 +49,6 @@ export class UserRepository {
     async findByEmail(email: string) {
         return await this.prisma.user.findFirst({
             where: { email },
-            select: {
-                id: true,
-                email: true,
-                password: true,
-                verified: true
-            }
         })
     }
 
@@ -52,7 +64,7 @@ export class UserRepository {
     }
 
     async update(id: string, data: IUserUpdate) {
-        await this.prisma.user.update({
+        return await this.prisma.user.update({
             where: { id },
             data
         })
