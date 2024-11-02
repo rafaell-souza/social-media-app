@@ -10,7 +10,12 @@ export class ProfileRepository {
         await this.prisma.profile.update({
             where: { userId: id },
             data: {
-                ...data,
+                photo: data.photo,
+                background: data.background,
+                bio: data.bio,
+                from: data.from,
+                site: data.site,
+                url: data.url,
                 user: {
                     update: {
                         name: data.name

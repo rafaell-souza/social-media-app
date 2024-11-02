@@ -12,7 +12,7 @@ export default class CreateUserDto {
     @IsNotEmpty()
     @MinLength(5)
     @MaxLength(50)
-    @Matches(/^[a-z ]+$/i)
+    @Matches(/^[A-Za-zÀ-ÖØ-öø-ÿ0-9 ]+$/i)
 
     name: string;
 
