@@ -7,7 +7,8 @@ export class SendEmailService {
     async to(
         name: string,
         email: string,
-        access_token: string
+        access_token: string,
+        template: string
     ) {
         try {
             await transporter.sendMail({

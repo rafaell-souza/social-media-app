@@ -4,6 +4,7 @@ import CreateUserDto from "src/dtos/CreateUserDto";
 import { LoginUserDto } from "src/dtos/LoginUserDto";
 import { Response, Request } from "express";
 import { AuthGuard } from "@nestjs/passport";
+import ResetPasswordAuthDto from "src/dtos/ResetPasswordDto";
 
 @Controller("auth")
 export class AuthController {
@@ -12,19 +13,19 @@ export class AuthController {
     ) { }
 
     @Post("register")
-    async register(@Body() CreateUserDto: CreateUserDto) {
+    async Register(@Body() CreateUserDto: CreateUserDto) {
         return await this.authService.register(CreateUserDto);
     }
 
     @Post("authentication")
     @HttpCode(200)
-    async authentication(@Body() loginUserDto: LoginUserDto) {
+    async Authentication(@Body() loginUserDto: LoginUserDto) {
         return await this.authService.authentication(loginUserDto);
     }
 
     @Post("logout")
     @HttpCode(200)
-    async logout(@Res() res: Response, @Req() req: Request) {
+    async Logout(@Res() res: Response, @Req() req: Request) {
         await this.authService.logout(req);
         return res.status(200).end();
     }
@@ -32,11 +33,11 @@ export class AuthController {
 
     @Get("google")
     @UseGuards(AuthGuard("google"))
-    async googleAuth() { }
+    async GoogleAuth() { }
 
     @Get("google/callback")
     @UseGuards(AuthGuard("google"))
-    async googleAuthRedirect(
+    async GoogleAuthRedirect(
         @Res() res: Response,
         @Req() req: any
     ) {
@@ -53,13 +54,26 @@ export class AuthController {
     }
 
     @Put("verify")
-    async verify(@Res() res: Response, @Req() req: Request) {
+    async Verify(@Res() res: Response, @Req() req: Request) {
         await this.authService.verifyAccount(req);
         return res.status(200).end();
     }
 
-    @Get("resend_confirmation/:email")
-    async sendEmail(@Param("email") email: string) {
-        return await this.authService.sendTo(email);
+    @Get("send_confirmation/:email/:template")
+    async SendConfirmation(
+        @Param('email') email: string,
+        @Param('template') template: "email" | "password"
+    ) {
+        return await this.authService.sendConfirmation(email, template);
+    }
+
+    @Put("change_password")
+    async ChangePassword(
+        @Body() resetPasswordAuthDto: ResetPasswordAuthDto,
+        @Res() res: Response,
+        @Req() req: Request
+    ) {
+        await this.authService.change(resetPasswordAuthDto.password, req);
+        return res.status(200).end()
     }
 }

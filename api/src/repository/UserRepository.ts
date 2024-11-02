@@ -15,12 +15,19 @@ export class UserRepository {
                 name: data.name,
                 email: data.email,
                 password: data.password,
+                type: "email_password",
                 profile: { create: {} },
                 token: {
                     create: {
                         confirmationToken: data.confirmationToken,
                     }
                 }
+            },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                type: true
             }
         })
     }
@@ -31,7 +38,8 @@ export class UserRepository {
                 id: data.id,
                 name: data.name,
                 email: data.email,
-                verified: data.verified,
+                verified: true,
+                type: "oauth",
                 profile: {
                     create: {
                         photo: data.photo
@@ -42,6 +50,12 @@ export class UserRepository {
                         refreshtoken: data.refreshtoken
                     }
                 }
+            },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                type: true
             }
         })
     }
@@ -59,6 +73,7 @@ export class UserRepository {
                 id: true,
                 name: true,
                 email: true,
+                verified: true
             }
         })
     }

@@ -13,7 +13,7 @@ export class JwtService {
         this.refresh_token_secret = process.env.JWT_REFRESH_TOKEN_SECRET;
 
         if (!this.access_token_secret || !this.refresh_token_secret) {
-            console.log("Environment variables not defined");
+            console.error("Environment variables not defined");
             return;
         }
     }

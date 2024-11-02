@@ -4,7 +4,7 @@ import { JwtService } from "src/helpers/jwt.service";
 import { UserRepository } from "src/repository/UserRepository";
 import { HashService } from "src/helpers/hash.service";
 import { SendEmailService } from "src/helpers/smtp/SendEmail.service";
-import { BadRequest, Conflict, NoContent, Forbidden, InternalError } from "src/exceptions/excepetion";
+import { BadRequest, Conflict, NoContent, Forbidden } from "src/exceptions/excepetion";
 import { IUserLogin } from "src/interfaces/IUserLogin";
 import { Request } from "express";
 import { v4 as uuid } from "uuid";
@@ -30,7 +30,14 @@ export class AuthService {
         data.confirmationToken = this.jwtService.createAccessToken(data.id);
 
         const newUser = await this.userRepo.create(data);
-        await this.sendEmailService.to(data.name, data.email, data.confirmationToken);
+
+        await this.sendEmailService.to(
+            data.name,
+            data.email,
+            data.confirmationToken,
+            "email"
+        );
+
         return newUser.email
     }
 
@@ -80,7 +87,6 @@ export class AuthService {
         }
 
         data.id = uuid();
-        data.verified = true;
         data.refreshtoken = this.jwtService.createRefreshToken(myAccount.id)
 
         const newUser = await this.userRepo.googleCreate(data);
@@ -99,7 +105,7 @@ export class AuthService {
             throw new Forbidden("Invalid confirmation token");
 
         await this.userRepo.update(id, { verified: true })
-        const refresh_token = await this.jwtService.createRefreshToken(id);
+        const refresh_token = this.jwtService.createRefreshToken(id);
 
         await this.tokenRepo.update(id, {
             confirmationToken: null,
@@ -107,18 +113,59 @@ export class AuthService {
         })
     }
 
-    async sendTo(email: string) {
+    async sendConfirmation(
+        email: string,
+        template: "email" | "password"
+    ) {
+        if (template !== "email" && template !== "password")
+            throw new Forbidden("A template is required")
+
         const account = await this.userRepo.findByEmail(email);
 
-        if (!account)
-            throw new Forbidden("Email not signed up");
+        if (!account?.email)
+            throw new Forbidden("User not found");
 
-        if (account.verified) 
-            throw new Forbidden("Verified account")
+        if (template === "email") {
+            const newToken = this.jwtService.createAccessToken(account.id)
+            await this.tokenRepo.update(account.id, { confirmationToken: newToken });
 
-        const newToken = this.jwtService.createAccessToken(account.id)
+            await this.sendEmailService.to(
+                account.name,
+                account.email,
+                newToken,
+                template
+            );
+        }
 
-        await this.tokenRepo.update(account.id, { confirmationToken: newToken })
-        await this.sendEmailService.to(account.name, account.email, newToken);
+        if (template === "password") {
+            if (!account.verified) 
+                throw new Forbidden("User not verified");
+
+            const newToken = this.jwtService.createAccessToken(account.id)
+            await this.tokenRepo.update(account.id, { resetPasswordToken: newToken });
+
+            await this.sendEmailService.to(
+                account.name,
+                account.email,
+                newToken,
+                template
+            );
+        }
+    }
+
+    async change(password: any, req: Request) {
+        const authToken = req.headers.authorization.split(" ")[1];
+        const id = this.jwtService.decode(authToken);
+
+        const user = await this.tokenRepo.find(id);
+
+        if (user.resetPasswordToken !== authToken)
+            throw new Forbidden("Invalid reset password token");
+
+        await this.userRepo.update(id, { 
+            password: await this.hashService.hash(password)
+        });
+
+        await this.tokenRepo.update(id, { resetPasswordToken: null })
     }
 }

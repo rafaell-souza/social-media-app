@@ -3,6 +3,5 @@ export interface IUserCreateGoogle {
     name: string;
     email: string;
     photo: string;
-    verified: boolean;
     refreshtoken: string;
 }

@@ -1,22 +1,26 @@
-import { 
-    Body, Controller, Post, Req, Res, UseGuards, Get, Put, Param, 
-    HttpCode, Delete 
-} from "@nestjs/common";
+import { Controller, Req, Res, Get, Delete } from "@nestjs/common";
 import { UserService } from "./user.service";
-import { Request } from "@nestjs/common";
+import { Request, Response } from "express";
 
 @Controller("user")
 export class UserController {
-    constructor(userService: UserService) {}
+    constructor(private userService: UserService) { }
 
     @Get()
-    async getUserData() {}
+    async GetUserDatails(
+        @Res() res: Response,
+        @Req() req: Request
+    ) {
+        const data = await this.userService.GetUserDatails(req);
+        return res.status(200).json(data)
+    }
 
-    @Delete(":id")
-    async deleteUserData() {}
-
-    @Put()
-    async userPassUpdate(@Req() request: Request) {
-        
-    } 
+    @Delete()
+    async DeleteUser(
+        @Res() res: Response,
+        @Req() req: Request
+    ) {
+        await this.userService.DeleteUser(req);
+        return res.status(200).end()
+    }
 }
