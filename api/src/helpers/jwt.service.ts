@@ -42,8 +42,8 @@ export class JwtService {
         return decode.id
     }
 
-    verify(token: string) {
-        const decode = jwt.verify(token, this.access_token_secret) as { id: string };
+    verify(token: string, secret: string) {
+        const decode = jwt.verify(token, secret) as { id: string };
         return decode.id
     }
 }

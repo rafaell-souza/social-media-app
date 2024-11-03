@@ -23,8 +23,9 @@ export class AuthModule implements NestModule {
         consumer
             .apply(AccessMiddleware)
             .forRoutes(
-                { path: "auth/a", method: RequestMethod.POST },
-                { path: "email_confirm/:email", method: RequestMethod.PUT }
+                { path: "logout", method: RequestMethod.POST },
+                { path: "verify", method: RequestMethod.PUT },
+                { path: "change_password", method: RequestMethod.PUT },
             )
     }
 }

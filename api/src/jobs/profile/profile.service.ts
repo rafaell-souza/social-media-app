@@ -11,15 +11,18 @@ export class ProfileService {
         private profileRepo: ProfileRepository
     ) { }
 
-    async GetProfile(req: Request) {
-        const authToken = req.headers.authorization.split(" ")[1];
-        const userid = this.jwtService.decode(authToken);
-        return await this.profileRepo.find("d23a5d47-04d3-42f8-b24d-0e27798bca5c");
+    async GetProfile(id?: string, req?: Request) {
+        if (!id) {
+            const authToken = req.headers.authorization.split(" ")[1];
+            const userid = this.jwtService.decode(authToken);
+            return await this.profileRepo.find(userid);
+        }
+        return await this.profileRepo.find(id);
     }
 
     async UpdateProfile(req: Request, data: IUpdateProfile) {
         const authToken = req.headers.authorization.split(" ")[1];
         const userid = this.jwtService.decode(authToken);
-        return await this.profileRepo.update("d23a5d47-04d3-42f8-b24d-0e27798bca5c", data);
+        return await this.profileRepo.update(userid, data);
     }
 }

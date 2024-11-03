@@ -7,12 +7,13 @@ import { ProfileDto } from "src/dtos/Profile-dto";
 export class ProfileController {
     constructor(private profileService: ProfileService) { }
 
-    @Get()
+    @Get("/:id?")
     async GetProfile(
         @Req() req: Request,
-        @Res() res: Response
+        @Res() res: Response,
+        @Param("id") id?: string
     ) {
-        const profile = await this.profileService.GetProfile(req);
+        const profile = await this.profileService.GetProfile(id, req);
         return res.status(200).json(profile)
     }
 

@@ -30,7 +30,6 @@ export class AuthController {
         return res.status(200).end();
     }
 
-
     @Get("google")
     @UseGuards(AuthGuard("google"))
     async GoogleAuth() { }
