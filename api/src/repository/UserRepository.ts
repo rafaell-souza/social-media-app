@@ -68,13 +68,7 @@ export class UserRepository {
 
     async findById(id: string) {
         return await this.prisma.user.findUnique({
-            where: { id },
-            select: {
-                id: true,
-                name: true,
-                email: true,
-                verified: true
-            }
+            where: { id }
         })
     }
 

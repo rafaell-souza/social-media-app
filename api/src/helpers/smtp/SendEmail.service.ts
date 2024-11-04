@@ -1,20 +1,26 @@
 import { InternalError } from "src/exceptions/excepetion";
 import transporter from "./config";
 import { Injectable } from "@nestjs/common";
+import generateTemplate from "./template";
 
 @Injectable()
 export class SendEmailService {
     async to(
         name: string,
         email: string,
-        access_token: string,
+        token: string,
         template: string
     ) {
         try {
+            const {
+                resetPasswordTemplate,
+                confirmEmailTemplate
+            } = await generateTemplate(name, token);
+
             await transporter.sendMail({
                 to: email,
                 from: "No reply",
-                html: `Oi ${name} seu token é ${access_token}`
+                html: template === "email" ? confirmEmailTemplate : resetPasswordTemplate
             } as any)
         }
         catch (error) {

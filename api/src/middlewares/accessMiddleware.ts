@@ -37,8 +37,8 @@ export class AccessMiddleware implements NestMiddleware {
     }
 
     async use(
-        res: Response,
         req: Request,
+        res: Response,
         next: NextFunction
     ) {
         if (!req.headers?.authorization)

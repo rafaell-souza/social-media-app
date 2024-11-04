@@ -4,7 +4,7 @@ import { JwtService } from "src/helpers/jwt.service";
 import { UserRepository } from "src/repository/UserRepository";
 import { HashService } from "src/helpers/hash.service";
 import { SendEmailService } from "src/helpers/smtp/SendEmail.service";
-import { BadRequest, Conflict, NoContent, Forbidden } from "src/exceptions/excepetion";
+import { BadRequest, Conflict, NoContent, Forbidden, Unauthorized } from "src/exceptions/excepetion";
 import { IUserLogin } from "src/interfaces/IUserLogin";
 import { Request } from "express";
 import { v4 as uuid } from "uuid";
@@ -63,10 +63,14 @@ export class AuthService {
         return access_token;
     }
 
-    // Token is supposed to be valid when hit thsi route
     async logout(req: Request) {
         const authToken = req.headers.authorization.split(" ")[1];
         const id = this.jwtService.decode(authToken);
+
+        const user = await this.userRepo.findById(id);
+        if (!user.verified)
+            throw new Unauthorized("Account not verified")
+
         await this.tokenRepo.update(id, { refreshtoken: null })
     }
 
@@ -93,7 +97,6 @@ export class AuthService {
         const access_token = this.jwtService.createAccessToken(newUser.id);
         return access_token;
     }
-
 
     async verifyAccount(req: Request) {
         const authToken = req.headers.authorization.split(" ")[1];
@@ -138,7 +141,7 @@ export class AuthService {
         }
 
         if (template === "password") {
-            if (!account.verified) 
+            if (!account.verified)
                 throw new Forbidden("User not verified");
 
             const newToken = this.jwtService.createAccessToken(account.id)
@@ -162,10 +165,13 @@ export class AuthService {
         if (user.resetPasswordToken !== authToken)
             throw new Forbidden("Invalid reset password token");
 
-        await this.userRepo.update(id, { 
+        await this.userRepo.update(id, {
             password: await this.hashService.hash(password)
         });
 
-        await this.tokenRepo.update(id, { resetPasswordToken: null })
+        await this.tokenRepo.update(id, {
+            resetPasswordToken: null,
+            refreshtoken: null
+        })
     }
 }
