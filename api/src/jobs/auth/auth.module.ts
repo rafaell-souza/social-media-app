@@ -1,8 +1,8 @@
 import { Module, RequestMethod } from "@nestjs/common";
 import { AuthController } from "./auth.controller";
 import { AuthService } from "./auth.service";
-import { UserRepository } from "src/repository/UserRepository";
-import { TokenRepository } from "src/repository/TokenRepository";
+import { UserRepository } from "src/repositories/UserRepository";
+import { TokenRepository } from "src/repositories/TokenRepository";
 import { GoogleStrategy } from "../../helpers/google.strategy";
 import { SendEmailService } from "src/helpers/smtp/SendEmail.service";
 import { NestModule, MiddlewareConsumer } from '@nestjs/common';
@@ -18,14 +18,4 @@ import { HelperModule } from "src/helpers/helper.module";
     ],
     imports: [HelperModule]
 })
-export class AuthModule implements NestModule {
-    configure(consumer: MiddlewareConsumer) {
-        consumer
-            .apply(AccessMiddleware)
-            .forRoutes(
-                { path: "logout", method: RequestMethod.POST },
-                { path: "verify", method: RequestMethod.PUT },
-                { path: "change_password", method: RequestMethod.PUT },
-            )
-    }
-}
+export class AuthModule {}

@@ -1,8 +1,9 @@
 import { Injectable } from "@nestjs/common";
 import { Request } from "express";
+import { NoContent } from "src/exceptions/excepetion";
 import { JwtService } from "src/helpers/jwt.service";
 import { IUpdateProfile } from "src/interfaces/IUpdateProfile";
-import { ProfileRepository } from "src/repository/ProfileRepository";
+import { ProfileRepository } from "src/repositories/ProfileRepository";
 
 @Injectable()
 export class ProfileService {
@@ -17,7 +18,13 @@ export class ProfileService {
             const userid = this.jwtService.decode(authToken);
             return await this.profileRepo.find(userid);
         }
-        return await this.profileRepo.find(id);
+
+        const profile = await this.profileRepo.find(id);
+
+        if (!profile)
+            throw new NoContent("Sorry, no content was found");
+
+        return profile;
     }
 
     async UpdateProfile(req: Request, data: IUpdateProfile) {

@@ -1,4 +1,4 @@
-import { UserRepository } from "src/repository/UserRepository";
+import { UserRepository } from "src/repositories/UserRepository";
 import { Request } from "express";
 import { JwtService } from "src/helpers/jwt.service";
 import { Injectable } from "@nestjs/common";

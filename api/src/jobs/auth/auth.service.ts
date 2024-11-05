@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common";
-import { TokenRepository } from "../../repository/TokenRepository";
+import { TokenRepository } from "../../repositories/TokenRepository";
 import { JwtService } from "src/helpers/jwt.service";
-import { UserRepository } from "src/repository/UserRepository";
+import { UserRepository } from "src/repositories/UserRepository";
 import { HashService } from "src/helpers/hash.service";
 import { SendEmailService } from "src/helpers/smtp/SendEmail.service";
 import { BadRequest, Conflict, NoContent, Forbidden, Unauthorized } from "src/exceptions/excepetion";

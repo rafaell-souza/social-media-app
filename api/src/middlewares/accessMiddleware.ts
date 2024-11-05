@@ -2,9 +2,9 @@ import { Request, Response, NextFunction } from "express";
 import { Injectable, NestMiddleware } from "@nestjs/common";
 import { JwtService } from "src/helpers/jwt.service";
 import { Forbidden, Unauthorized } from "src/exceptions/excepetion";
-import { TokenRepository } from "src/repository/TokenRepository";
+import { TokenRepository } from "src/repositories/TokenRepository";
 import "dotenv/config";
-import { UserRepository } from "src/repository/UserRepository";
+import { UserRepository } from "src/repositories/UserRepository";
 import { JsonWebTokenError } from "jsonwebtoken";
 
 @Injectable()
