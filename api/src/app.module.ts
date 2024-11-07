@@ -7,9 +7,14 @@ import { AccessMiddleware } from './middlewares/accessMiddleware';
 import { UserRepository } from './repositories/UserRepository';
 import { TokenRepository } from './repositories/TokenRepository';
 import { HelperModule } from './helpers/helper.module';
+import { CommentModule } from './jobs/comment/comment.module';
 
 @Module({
-  imports: [AuthModule, UserModule, ProfileModule, PostModule, HelperModule],
+  imports: [
+    AuthModule, UserModule,
+    ProfileModule, PostModule,
+    HelperModule, CommentModule
+  ],
   providers: [UserRepository, TokenRepository]
 })
 export class AppModule implements NestModule {

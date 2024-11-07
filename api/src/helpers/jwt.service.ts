@@ -23,7 +23,7 @@ export class JwtService {
     ): string {
         return jwt.sign({
             id: id,
-            createdAt: format(new Date(), "Pp"),
+            createdAt: format(new Date(), "Ppp"),
         }, this.access_token_secret, {
             expiresIn: "15m"
         })

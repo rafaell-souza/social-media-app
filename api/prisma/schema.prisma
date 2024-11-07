@@ -60,7 +60,6 @@ model Post {
 model Comment {
   id        Int      @id @default(autoincrement())
   text      String
-  content   String?  @db.Text
   createdAt DateTime @default(now())
 
   userId String @db.VarChar(36)

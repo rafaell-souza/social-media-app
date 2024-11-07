@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { JwtService } from "src/helpers/jwt.service";
 import { ICreatePost } from "src/interfaces/IcreatePost";
-import { PostRepository } from "src/repositories/postRepository";
+import { PostRepository } from "src/repositories/PostRepository";
 import { Request } from "express";
 import { NoContent } from "src/exceptions/excepetion";
 
@@ -18,40 +18,33 @@ export class PostService {
         await this.postRepo.create(userId, data);
     }
 
+
     async UserPosts(req?: Request, id?: string) {
         if (!id) {
             const access_token = req.headers.authorization.split(" ")[1];
             const userId = this.jwtService.decode(access_token);
-            const posts = await this.postRepo.findPosts(userId);
-            return posts ? posts : [];
+            return await this.postRepo.findPosts(userId);
         }
 
-        const posts = await this.postRepo.findPosts(id);
-        return posts ? posts : [];
+        return await this.postRepo.findPosts(id);
     }
 
+
     async Posts() {
-        const posts = await this.postRepo.findPosts();
-        return posts ? posts : [];
+        return await this.postRepo.findPosts();
     }
+
 
     async UpadtePost(req: Request, postId: number, text: string) {
         const access_token = req.headers.authorization.split(" ")[1];
         const userId = this.jwtService.decode(access_token);
-
-        const post = await this.postRepo.update(userId, postId, text);
-
-        if (!post)
-            throw new NoContent("content no found. Try again later");
+        await this.postRepo.update(userId, postId, text);
     }
+
 
     async DeletePost(req: Request, postId: number) {
         const access_token = req.headers.authorization.split(" ")[1];
         const userId = this.jwtService.decode(access_token);
-
-        const post = await this.postRepo.Delete(userId, postId);
-
-        if (!post)
-            throw new NoContent("content no found. Try again later");
+        await this.postRepo.Delete(userId, postId);
     }
 }

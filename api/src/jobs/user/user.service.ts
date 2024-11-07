@@ -27,12 +27,14 @@ export class UserService {
         }
     }
 
+
     async DeleteUser(req: Request) {
         const authToken = req.headers.authorization.split(" ")[1];
         const id = this.jwtService.decode(authToken)
         return await this.userRepo.delete(id);
     }
 
+    
     async ResetPassword(
         req: Request,
         data: { oldPassword: string, password: string }

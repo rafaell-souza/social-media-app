@@ -28,27 +28,10 @@ export class PostRepository {
     }
 
     async findPosts(id?: string) {
-        if (!id)
-            return await this.prisma.post.findMany({
-                select: {
-                    text: true,
-                    content: true,
-                    createdAt: true,
-                    userId: true,
-                    user: {
-                        select: {
-                            name: true,
-                            profile: {
-                                select: { photo: true }
-                            }
-                        }
-                    }
-                }
-            });
-
-        return await this.prisma.post.findMany({
-            where: { userId: id },
+        const data = await this.prisma.post.findMany({
+            where: id ? { userId: id } : {},
             select: {
+                id: true,
                 text: true,
                 content: true,
                 createdAt: true,
@@ -62,7 +45,22 @@ export class PostRepository {
                     }
                 }
             }
-        })
+        });
+
+        return {
+            total_posts: data.length,
+            posts: data.map(post => ({
+                id: post.id,
+                text: post.text,
+                content: post.content,
+                createdAt: post.createdAt,
+                userId: post.userId,
+                user: {
+                    name: post.user.name,
+                    profilePhoto: post.user.profile.photo
+                }
+            }))
+        };
     }
 
     async Delete(userId: string, postId: number) {
