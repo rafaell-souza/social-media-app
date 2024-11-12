@@ -20,6 +20,8 @@ model User {
   posts        Post[]
   comments     Comment[]
   interactions UserInteraction[]
+  followers    Follower[]        @relation("followerRelation")
+  following    Follower[]        @relation("followingRelation")
 }
 
 model Tokens {
@@ -105,4 +107,15 @@ model UserInteraction {
   interaction   Interaction @relation(fields: [interactionId], references: [id], onDelete: Cascade)
 
   @@unique([userId, postId, commentId, interactionId])
+}
+
+model Follower {
+  id          Int    @id @default(autoincrement())
+  followerId  String @db.VarChar(36)
+  followingId String @db.VarChar(36)
+
+  follower  User @relation("followerRelation", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("followingRelation", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
 }
