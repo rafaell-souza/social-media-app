@@ -1,4 +1,3 @@
-import { InternalError } from "src/exceptions/excepetion";
 import transporter from "./config";
 import { Injectable } from "@nestjs/common";
 import generateTemplate from "./template";
@@ -24,7 +23,7 @@ export class SendEmailService {
             } as any)
         }
         catch (error) {
-            throw new InternalError(`Error: ${error}`)
+            console.error(error)
         }
     }
 }

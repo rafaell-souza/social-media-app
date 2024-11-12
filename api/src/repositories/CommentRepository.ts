@@ -21,46 +21,6 @@ export class CommentRepository {
         })
     }
 
-    async read(postId: number) {
-        const comments = await this.prisma.comment.findMany({
-            where: { postId: postId },
-            select: {
-                text: true,
-                id: true,
-                userId: true,
-                parentId: true,
-                createdAt: true,
-                children: true,
-                user: {
-                    select: {
-                        name: true,
-                        profile: {
-                            select: {
-                                photo: true
-                            }
-                        }
-                    }
-                },
-            }
-        })
-
-        return {
-            total_comments: comments.length,
-            comments: comments.map(comment => ({
-                id: comment.id,
-                parentId: comment.parentId,
-                userId: comment.userId,
-                text: comment.text,
-                createdAt: comment.createdAt,
-                replies: comment.children,
-                user: {
-                    name: comment.user.name,
-                    profilePhoto: comment.user.profile.photo
-                }
-            }))
-        }
-    }
-
     async update(userId: string, commentId: number, text: string) {
         return await this.prisma.comment.update({
             where: {

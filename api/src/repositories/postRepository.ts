@@ -28,8 +28,10 @@ export class PostRepository {
     }
 
     async findPosts(id?: string) {
+        const whereCondition = id ? { userId: id } : {};
+
         const data = await this.prisma.post.findMany({
-            where: id ? { userId: id } : {},
+            where: whereCondition,
             select: {
                 id: true,
                 text: true,
@@ -43,22 +45,124 @@ export class PostRepository {
                             select: { photo: true }
                         }
                     }
+                },
+                comments: {
+                    where: { parentId: null },
+                    select: {
+                        text: true,
+                        id: true,
+                        userId: true,
+                        parentId: true,
+                        createdAt: true,
+                        children: true,
+                        user: {
+                            select: {
+                                name: true,
+                                profile: {
+                                    select: {
+                                        photo: true
+                                    }
+                                }
+                            }
+                        },
+                        UserInteraction: {
+                            select: {
+                                id: true,
+                                userId: true,
+                                commentId: true,
+                                interactionId: true,
+                                user: {
+                                    select: {
+                                        name: true,
+                                        profile: {
+                                            select: {
+                                                photo: true
+                                            }
+                                        }
+                                    }
+                                },
+                                interaction: {
+                                    select: {
+                                        name: true
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                UserInteraction: {
+                    select: {
+                        id: true,
+                        userId: true,
+                        postId: true,
+                        type: true,
+                        interactionId: true,
+                        user: {
+                            select: {
+                                name: true,
+                                profile: {
+                                    select: {
+                                        photo: true
+                                    }
+                                }
+                            }
+                        },
+                        interaction: {
+                            select: {
+                                name: true
+                            }
+                        }
+                    }
                 }
             }
         });
 
         return {
-            total_posts: data.length,
             posts: data.map(post => ({
                 id: post.id,
                 text: post.text,
                 content: post.content,
                 createdAt: post.createdAt,
-                userId: post.userId,
                 user: {
+                    id: post.userId,
                     name: post.user.name,
-                    profilePhoto: post.user.profile.photo
-                }
+                    photo: post.user.profile.photo
+                },
+                comments: post.comments.map(comment => ({
+                    id: comment.id,
+                    parentId: comment.parentId,
+                    text: comment.text,
+                    createdAt: comment.createdAt,
+                    user: {
+                        id: comment.userId,
+                        name: comment.user.name,
+                        photo: comment.user.profile.photo
+                    },
+                    userInteractions: comment.UserInteraction.map(interaction => ({
+                        id: interaction.id,
+                        interaction_Id: interaction.interactionId,
+                        interaction_name: interaction.interaction.name,
+                        user: {
+                            id: interaction.userId,
+                            name: interaction.user.name,
+                            photo: interaction.user.profile.photo
+                        }
+                    })),
+                    replies: comment.children,
+                    total_replies: comment.children.length
+                })),
+                userInteractions: post.UserInteraction.map(interaction => ({
+                    id: interaction.id,
+                    interaction_Id: interaction.interactionId,
+                    interaction_name: interaction.interaction.name,
+                    user: {
+                        id: interaction.userId,
+                        name: interaction.user.name,
+                        photo: interaction.user.profile.photo
+                    }
+                })),
+                total_posts: data.length,
+                total_comments: post.comments.length
             }))
         };
     }

@@ -7,6 +7,21 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id       String  @id @unique @db.VarChar(36)
+  name     String  @db.VarChar(50)
+  email    String  @unique @db.VarChar(50)
+  password String? @db.VarChar(70)
+  verified Boolean @default(false)
+  type     String  @db.VarChar(15)
+
+  profile      Profile?
+  token        Tokens?
+  posts        Post[]
+  comments     Comment[]
+  interactions UserInteraction[]
+}
+
 model Tokens {
   id                 Int     @id @default(autoincrement())
   refreshtoken       String? @unique
@@ -31,20 +46,6 @@ model Profile {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-model User {
-  id       String  @id @unique @db.VarChar(36)
-  name     String  @db.VarChar(50)
-  email    String  @unique @db.VarChar(50)
-  password String? @db.VarChar(70)
-  verified Boolean @default(false)
-  type     String  @db.VarChar(15)
-
-  profile  Profile?
-  token    Tokens?
-  posts    Post[]
-  comments Comment[]
-}
-
 model Post {
   id        Int      @id @default(autoincrement())
   text      String   @db.Text
@@ -54,7 +55,8 @@ model Post {
   userId String @db.VarChar(36)
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  comments Comment[]
+  comments        Comment[]
+  UserInteraction UserInteraction[]
 }
 
 model Comment {
@@ -71,4 +73,36 @@ model Comment {
   parentId Int?
   parent   Comment?  @relation("CommentParent", fields: [parentId], references: [id], onDelete: Cascade)
   children Comment[] @relation("CommentParent")
+
+  UserInteraction UserInteraction[]
+}
+
+model Interaction {
+  id              Int               @id @default(autoincrement())
+  name            String            @db.VarChar(15)
+  UserInteraction UserInteraction[]
+}
+
+enum Type {
+  COMMENT
+  POST
+}
+
+model UserInteraction {
+  id   Int  @id @default(autoincrement())
+  type Type
+
+  userId String @db.VarChar(36)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  postId Int?
+  post   Post? @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  commentId Int?
+  comment   Comment? @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  interactionId Int
+  interaction   Interaction @relation(fields: [interactionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId, commentId, interactionId])
 }

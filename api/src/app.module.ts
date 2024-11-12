@@ -8,12 +8,14 @@ import { UserRepository } from './repositories/UserRepository';
 import { TokenRepository } from './repositories/TokenRepository';
 import { HelperModule } from './helpers/helper.module';
 import { CommentModule } from './jobs/comment/comment.module';
+import { InteractionModule } from './jobs/interaction/interaction.module';
 
 @Module({
   imports: [
     AuthModule, UserModule,
     ProfileModule, PostModule,
-    HelperModule, CommentModule
+    HelperModule, CommentModule,
+    InteractionModule
   ],
   providers: [UserRepository, TokenRepository]
 })

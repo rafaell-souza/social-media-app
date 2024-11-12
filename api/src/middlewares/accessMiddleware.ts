@@ -9,8 +9,8 @@ import { JsonWebTokenError } from "jsonwebtoken";
 
 @Injectable()
 export class AccessMiddleware implements NestMiddleware {
-    private access_secret: string;
-    private refresh_secret: string;
+    private readonly access_secret: string;
+    private readonly refresh_secret: string;
 
     constructor(
         private jwtService: JwtService,
@@ -41,6 +41,9 @@ export class AccessMiddleware implements NestMiddleware {
         res: Response,
         next: NextFunction
     ) {
+        if (!this.access_secret || !this.refresh_secret)
+            throw new Error("Incomplete auth configs")
+
         if (!req.headers?.authorization)
             return next(new Unauthorized("Authorization header is missing"));
 
@@ -57,21 +60,19 @@ export class AccessMiddleware implements NestMiddleware {
                 return next(new Forbidden("User was not found"));
 
             return next();
-            
+
         } catch (error) {
             if (error instanceof JsonWebTokenError) {
                 const id = this.jwtService.decode(token);
 
                 if (!id)
-                    return next(new Unauthorized("Access token is invalid"))
+                    return next(new Unauthorized("Access denied"))
 
                 const newToken = await this.refreshUserToken(id);
-
-                req.headers.authorization = `Bearer ${newToken}`;
-                return next()
+                return res.send(newToken)
             }
 
-            else return next(new Unauthorized("Unauthorized access."))
+            else return next(new Unauthorized("Unauthorized access token."))
         }
     }
 }
