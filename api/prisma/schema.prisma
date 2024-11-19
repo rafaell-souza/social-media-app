@@ -7,115 +7,122 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id       String  @id @unique @db.VarChar(36)
-  name     String  @db.VarChar(50)
-  email    String  @unique @db.VarChar(50)
-  password String? @db.VarChar(70)
-  verified Boolean @default(false)
-  type     String  @db.VarChar(15)
-
-  profile      Profile?
-  token        Tokens?
-  posts        Post[]
-  comments     Comment[]
-  interactions UserInteraction[]
-  followers    Follower[]        @relation("followerRelation")
-  following    Follower[]        @relation("followingRelation")
+enum AccountType {
+  oauth_account
+  system_account
 }
 
-model Tokens {
-  id                 Int     @id @default(autoincrement())
-  refreshtoken       String? @unique
-  confirmationToken  String? @unique
-  resetPasswordToken String? @unique
+model User {
+  id        String   @id @unique @db.VarChar(36)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  userId String @unique @db.VarChar(36)
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  first_name String      @db.VarChar(50)
+  last_name  String      @db.VarChar(50)
+  email      String      @unique @db.VarChar(50)
+  password   String?     @db.VarChar(70)
+  type       AccountType
+  verified   Boolean     @default(false)
+
+  profile   Profile?
+  token     Token?
+  posts     Post[]
+  comments  Comment[]
+  followers Follower[] @relation("followerRelation")
+  following Follower[] @relation("followingRelation")
+  reactions Reaction[]
+}
+
+model Token {
+  id           Int       @id @default(autoincrement())
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  lastLogoutAt DateTime?
+
+  hashedRt String? @unique
+  hashedCt String? @unique
+
+  owner_id String @unique @db.VarChar(36)
+  owner    User   @relation(fields: [owner_id], references: [id], onDelete: Cascade)
 }
 
 model Profile {
-  id         Int      @id @default(autoincrement())
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   photo      String?
   background String?
   bio        String?
-  from       String?  @db.VarChar(50)
-  site       String?  @db.VarChar(40)
+  from       String? @db.VarChar(50)
+  site       String? @db.VarChar(40)
   url        String?
-  createdAt  DateTime @default(now())
-  userId     String   @unique @db.VarChar(36)
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  owner_id String @unique @db.VarChar(36)
+  owner    User   @relation(fields: [owner_id], references: [id], onDelete: Cascade)
 }
 
 model Post {
   id        Int      @id @default(autoincrement())
-  text      String   @db.Text
-  content   String?  @db.Text
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  userId String @db.VarChar(36)
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  text    String  @db.Text
+  content String? @db.Text
 
-  comments        Comment[]
-  UserInteraction UserInteraction[]
+  owner_id String @db.VarChar(36)
+  owner    User   @relation(fields: [owner_id], references: [id], onDelete: Cascade)
+
+  comments  Comment[]
+  reactions Reaction[]
 }
 
 model Comment {
   id        Int      @id @default(autoincrement())
-  text      String
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  userId String @db.VarChar(36)
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  text    String
+  content String?
 
-  postId Int
-  post   Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author_id String @db.VarChar(36)
+  author    User   @relation(fields: [author_id], references: [id], onDelete: Cascade)
 
-  parentId Int?
-  parent   Comment?  @relation("CommentParent", fields: [parentId], references: [id], onDelete: Cascade)
-  children Comment[] @relation("CommentParent")
+  post_id Int
+  post    Post @relation(fields: [post_id], references: [id], onDelete: Cascade)
 
-  UserInteraction UserInteraction[]
-}
+  parent_Id Int?
+  parent    Comment? @relation("CommentParent", fields: [parent_Id], references: [id], onDelete: Cascade)
 
-model Interaction {
-  id              Int               @id @default(autoincrement())
-  name            String            @db.VarChar(15)
-  UserInteraction UserInteraction[]
-}
-
-enum Type {
-  COMMENT
-  POST
-}
-
-model UserInteraction {
-  id   Int  @id @default(autoincrement())
-  type Type
-
-  userId String @db.VarChar(36)
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  postId Int?
-  post   Post? @relation(fields: [postId], references: [id], onDelete: Cascade)
-
-  commentId Int?
-  comment   Comment? @relation(fields: [commentId], references: [id], onDelete: Cascade)
-
-  interactionId Int
-  interaction   Interaction @relation(fields: [interactionId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, postId, commentId, interactionId])
+  children  Comment[]  @relation("CommentParent")
+  reactions Reaction[]
 }
 
 model Follower {
-  id          Int    @id @default(autoincrement())
-  followerId  String @db.VarChar(36)
-  followingId String @db.VarChar(36)
+  id Int @id @default(autoincrement())
 
-  follower  User @relation("followerRelation", fields: [followerId], references: [id], onDelete: Cascade)
-  following User @relation("followingRelation", fields: [followingId], references: [id], onDelete: Cascade)
+  follower_Id String @db.VarChar(36)
+  follower    User   @relation("followerRelation", fields: [follower_Id], references: [id], onDelete: Cascade)
 
-  @@unique([followerId, followingId])
+  following_Id String @db.VarChar(36)
+  following    User   @relation("followingRelation", fields: [following_Id], references: [id], onDelete: Cascade)
+
+  @@unique([follower_Id, following_Id])
+}
+
+model Reaction {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+
+  post_Id Int?
+  Post    Post? @relation(fields: [post_Id], references: [id])
+
+  comment_id Int?
+  Comment    Comment? @relation(fields: [comment_id], references: [id])
+
+  user_id String @db.VarChar(36)
+  User    User?  @relation(fields: [user_id], references: [id])
+
+  @@unique([user_id, comment_id])
+  @@unique([user_id, post_Id])
 }

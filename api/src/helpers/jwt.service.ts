@@ -5,45 +5,44 @@ import { format } from "date-fns";
 
 @Injectable()
 export class JwtService {
-    refresh_token_secret: string | undefined;
-    access_token_secret: string | undefined;
+    private readonly access_secret = process.env.JWT_ACCESS_SECRET;
+    private readonly refresh_secret = process.env.JWT_REFRESH_SECRET;
+    private readonly confirmation_token = process.env.JWT_CONFIRMATION_SECRET
 
-    constructor() {
-        this.access_token_secret = process.env.JWT_ACCESS_TOKEN_SECRET;
-        this.refresh_token_secret = process.env.JWT_REFRESH_TOKEN_SECRET;
-
-        if (!this.access_token_secret || !this.refresh_token_secret) {
-            console.error("Environment variables not defined");
-            return;
-        }
-    }
-
-    createAccessToken(
+    createAT(
         id: string,
+        email: string
     ): string {
         return jwt.sign({
-            id: id,
-            createdAt: format(new Date(), "Ppp"),
-        }, this.access_token_secret, {
-            expiresIn: "15m"
+            sub: id,
+            email: email,
+            iat: format(new Date(), "Pp")
+        }, this.access_secret, {
+            expiresIn: "30m"
         })
     }
 
-    createRefreshToken(id: string): string {
+    createCt(id: string): string {
         return jwt.sign({
-            id: id,
-        }, this.refresh_token_secret, {
+            sub: id,
+        }, this.confirmation_token, {
+            expiresIn: "5m"
+        })
+    }
+
+    createRt(id: string): string {
+        return jwt.sign({
+            sub: id,
+        }, this.refresh_secret, {
             expiresIn: "30d"
         })
     }
 
-    decode(token: string) {
-        const decode = jwt.decode(token) as { id: string };
-        return decode.id
+    jwtDecode(token: string) {
+        return jwt.decode(token);
     }
 
-    verify(token: string, secret: string) {
-        const decode = jwt.verify(token, secret) as { id: string };
-        return decode.id
+    jwtVerify(token: string, secret: string) {
+        return jwt.verify(token, secret);
     }
 }

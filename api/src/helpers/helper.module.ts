@@ -1,12 +1,11 @@
-import { Module } from "@nestjs/common";
+import { Global, Module } from "@nestjs/common";
 import { JwtService } from "./jwt.service";
 import { HashService } from "./hash.service";
-import { PrismaService } from "src/prisma.service";
-import { SendEmailService } from "./smtp/SendEmail.service";
+import { EmailService } from "./smtp/email.service";
 
+@Global()
 @Module({
-    providers: [JwtService, HashService, PrismaService, SendEmailService],
-    exports: [PrismaService, JwtService, HashService, SendEmailService]
+    providers: [JwtService, HashService, EmailService],
+    exports: [JwtService, HashService, EmailService], 
 })
-
-export class HelperModule { }
+export class HelperModule {}

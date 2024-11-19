@@ -1,66 +1,56 @@
-import { Controller, Get, Put, Post, Req, Res, Param, Body, Delete } from "@nestjs/common";
-import { Request, Response } from "express";
-import { CreatePostDto } from "src/dtos/CreatePostDto";
+import { Controller, Get, Put, Post, Req, Param, Body, Delete, UseGuards } from "@nestjs/common";
+import { CreatePostDto } from "src/dto/CreatePostDto";
 import { PostService } from "./post.service";
-import { UpdatePostDto } from "src/dtos/UpdatePostDto";
+import { UpdatePostDto } from "src/dto/UpdatePostDto";
+import { JwtAuthOptional } from "src/guards/auth-optional.guard";
 
 @Controller("post")
 export class PostController {
     constructor(private postService: PostService) { }
 
     @Post()
-    async CreatePost(
-        @Res() res: Response,
-        @Req() req: Request,
-        @Body() createPostDto: CreatePostDto
+    async createPost(
+        @Req() req: any,
+        @Body() dto: CreatePostDto
     ) {
-        await this.postService.NewPost(req, createPostDto);
-        return res.status(201).json({
-            message: "New post created",
-            success: true
-        })
+        const userId: string = req.user.id;
+        return await this.postService.createPost(userId, dto);
+
     }
 
     @Get("all")
-    async GetPosts() {
-        return await this.postService.Posts();
+    async posts() {
+        return await this.postService.posts();
     }
 
     @Get("/:id?")
-    async GetUserPosts(
-        @Param("id") id: string,
-        @Res() res: Response,
-        @Req() req: Request
+    @UseGuards(JwtAuthOptional)
+    async post(
+        @Req() req: any,
+        @Param("id") id?: string
     ) {
-        if (id === "all") return this.postService.Posts();
-        const posts = await this.postService.UserPosts(req, id);
-        return res.status(200).json(posts)
+        if (id === "all") return this.postService.posts();
+
+        const userId = req?.user?.id;
+        return await this.postService.post(id ? id : userId);
     }
 
-    @Put("/:id")
-    async UpdatePost(
-        @Body() updatePostDto: UpdatePostDto,
-        @Res() res: Response,
-        @Req() req: Request,
-        @Param("id") id: string
+    @Put("/:post_id")
+    async updatePost(
+        @Body() dto: UpdatePostDto,
+        @Req() req: any,
+        @Param("post_id") post_id: number
     ) {
-        await this.postService.UpadtePost(req, Number(id), updatePostDto.text);
-        return res.status(200).json({
-            message: `Post id: ${id}, updated`,
-            success: true
-        })
+        const userId: string = req.user.id;
+        return await this.postService.updatePost(userId, post_id, dto.text);
     }
 
-    @Delete("/:id")
-    async DeletePost(
-        @Res() res: Response,
-        @Req() req: Request,
-        @Param("id") id: string
+    @Delete("/:post_id")
+    async deletePost(
+        @Req() req: any,
+        @Param("post_id") post_id: number
     ) {
-        await this.postService.DeletePost(req, Number(id));
-        return res.status(200).json({
-            message: `Post id: ${id}, deleted`,
-            success: true
-        })
+        const userId: string = req.user.id;
+        return await this.postService.deletePost(userId, post_id);
     }
 }

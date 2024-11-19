@@ -1,21 +1,15 @@
-import { Module, RequestMethod } from "@nestjs/common";
+import { Module } from "@nestjs/common";
 import { AuthController } from "./auth.controller";
 import { AuthService } from "./auth.service";
-import { UserRepository } from "src/repositories/UserRepository";
-import { TokenRepository } from "src/repositories/TokenRepository";
+import { UserRepository } from "src/repositories/user";
+import { TokenRepository } from "src/repositories/token";
 import { GoogleStrategy } from "../../helpers/google.strategy";
-import { SendEmailService } from "src/helpers/smtp/SendEmail.service";
-import { NestModule, MiddlewareConsumer } from '@nestjs/common';
-import { AccessMiddleware } from "src/middlewares/accessMiddleware";
+import { PrismaModule } from "src/prisma/prisma.module";
 import { HelperModule } from "src/helpers/helper.module";
 
 @Module({
     controllers: [AuthController],
-    providers: [
-        AuthService,
-        UserRepository, TokenRepository,
-        GoogleStrategy, SendEmailService
-    ],
-    imports: [HelperModule]
+    providers: [AuthService, UserRepository, TokenRepository, GoogleStrategy],
+    imports: [PrismaModule, HelperModule]
 })
-export class AuthModule {}
+export class AuthModule { }

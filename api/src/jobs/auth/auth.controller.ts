@@ -1,46 +1,47 @@
 import { Body, Controller, Post, Req, Res, Param, UseGuards, Put, Get, HttpCode } from "@nestjs/common";
 import { AuthService } from "./auth.service";
-import CreateUserDto from "src/dtos/CreateUserDto";
-import { LoginUserDto } from "src/dtos/LoginUserDto";
+import { LoginUserDto } from "src/dto/LoginUserDto";
 import { Response, Request } from "express";
 import { AuthGuard } from "@nestjs/passport";
-import ResetPasswordAuthDto from "src/dtos/ResetPasswordDto";
+import AuthCreateUserDto from "src/dto/auth-create-user.dto";
+import { v4 as uuid } from "uuid";
+import { IUserSignup } from "src/interfaces/IUserSignup";
+import { JwtRefreshGuard } from "src/guards/jwt-refresh.guard";
+import { JwtConfirmationGuard } from "src/guards/jwt-confirmation.guard";
+import AuthResetPasswordDto from "src/dto/auth-reset-password.dto";
 
 @Controller("auth")
 export class AuthController {
-    constructor(
-        private authService: AuthService
-    ) { }
+    constructor(private authService: AuthService) { }
 
-    @Post("register")
-    async Register(@Body() CreateUserDto: CreateUserDto) {
-        const data = await this.authService.register(CreateUserDto);
-        return {
-            email: data,
-            message: `A confirmation email was sent to: ${data}`,
-            success: true
+    @Post("local/signup")
+    async signupLocal(@Body() dto: AuthCreateUserDto): Promise<String> {
+        const user: IUserSignup = {
+            id: uuid(),
+            ...dto
         }
+        return await this.authService.signupLocal(user);
     }
 
-    @Post("authentication")
+    @Post("local/signin")
     @HttpCode(200)
-    async Authentication(@Body() loginUserDto: LoginUserDto) {
-        const token = await this.authService.authentication(loginUserDto);
-        return {
-            access_token: token,
-            message: `You signed in successfully`,
-            success: true
-        }
+    async signinLocal(@Body() dto: LoginUserDto) {
+        return await this.authService.signinLocal(dto);
     }
 
     @Post("logout")
     @HttpCode(200)
-    async Logout(@Res() res: Response, @Req() req: Request) {
-        await this.authService.logout(req);
-        return res.status(200).json({
-            message: "You logged out successfully",
-            success: true
-        });
+    async logout(@Req() req: any) {
+        const id = req.user.id;
+        return await this.authService.logout(id);
+    }
+
+    @Post("refresh")
+    @UseGuards(JwtRefreshGuard)
+    @HttpCode(200)
+    async refreshToken(@Req() req: Request) {
+        const { id, refresh } = req.user as any;
+        return await this.authService.refreshToken(id, refresh)
     }
 
     @Get("google")
@@ -54,52 +55,48 @@ export class AuthController {
         @Req() req: any
     ) {
         const data = {
-            name: `${req.user.firstName} ${req.user.lastName}`,
+            id: uuid(),
+            first_name: req.user.first_name,
+            last_name: req.user.last_name,
             email: req.user.email,
-            password: null,
-            photo: req.user.picture,
-            verified: true
+            photo: req.user.photo,
         }
 
-        const token = await this.authService.googleAccount(data);
-        return res.status(201).json({
-            access_token: token,
-            message: "Google OAuth login completed successfully",
-            success: true
-        });
+        return await this.authService.google(data);
     }
 
     @Put("verify")
-    async Verify(@Res() res: Response, @Req() req: Request) {
-        await this.authService.verifyAccount(req);
-        return res.status(200).json({
-            message: "Verification completed successfully",
-            success: true
-        });
+    @UseGuards(JwtConfirmationGuard)
+    async VerifyLocal(@Req() req: any) {
+        const userId = req.user.id as string;
+        const token = req.user.token as string;
+
+        const verified = await this.authService.VerifyLocal(userId, token);
+        return { success: verified ? true : false };
     }
 
-    @Get("send_confirmation/:email/:template")
-    async SendConfirmation(
-        @Param('email') email: string,
+
+    @Get("verification/:template")
+    async SendVerification(
+        @Req() request: Request,
         @Param('template') template: "email" | "password"
     ) {
-        await this.authService.sendConfirmation(email, template);
+        const email = request.body.email;
+        await this.authService.sendVerification(email, template);
         return {
-            message: `Check your mail box for a new confirmation email`,
+            message: `A verification email was sent to: ${email}`,
             success: true
         }
     }
 
-    @Put("change_password")
-    async ChangePassword(
-        @Body() resetPasswordAuthDto: ResetPasswordAuthDto,
-        @Res() res: Response,
-        @Req() req: Request
+    @Put("password-reset")
+    @UseGuards(JwtConfirmationGuard)
+    async passwordReset(
+        @Body() dto: AuthResetPasswordDto,
+        @Req() req: any
     ) {
-        await this.authService.change(resetPasswordAuthDto.password, req);
-        return res.status(200).json({
-            message: "Your password has been changed",
-            success: true
-        })
+        const id = req.user.id
+        const result = await this.authService.passwordReset(dto.password, id);
+        return { success: result ? true : false };
     }
 }

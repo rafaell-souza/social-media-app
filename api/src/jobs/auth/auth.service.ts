@@ -1,13 +1,13 @@
 import { Injectable } from "@nestjs/common";
-import { TokenRepository } from "../../repositories/TokenRepository";
+import { TokenRepository } from "src/repositories/token";
 import { JwtService } from "src/helpers/jwt.service";
-import { UserRepository } from "src/repositories/UserRepository";
+import { UserRepository } from "src/repositories/user";
 import { HashService } from "src/helpers/hash.service";
-import { SendEmailService } from "src/helpers/smtp/SendEmail.service";
-import { BadRequest, Conflict, NoContent, Forbidden, Unauthorized } from "src/exceptions/excepetion";
-import { IUserLogin } from "src/interfaces/IUserLogin";
-import { Request } from "express";
-import { v4 as uuid } from "uuid";
+import { EmailService } from "src/helpers/smtp/email.service";
+import { BadRequest, Conflict, NoContent, Unauthorized } from "src/exceptions/excepetion";
+import { IUserSignin } from "src/interfaces/IUserSignin";
+import { IUserSignup } from "src/interfaces/IUserSignup";
+import { IAuthGoogle } from "src/interfaces/IAuthGoogle";
 
 @Injectable()
 export class AuthService {
@@ -15,163 +15,140 @@ export class AuthService {
         private tokenRepo: TokenRepository,
         private jwtService: JwtService,
         private userRepo: UserRepository,
-        private sendEmailService: SendEmailService,
-        private hashService: HashService,
+        private emailService: EmailService,
+        private hashService: HashService
     ) { }
 
-    async register(data: any) {
-        const myAccount = await this.userRepo.findByEmail(data.email);
+    async signupLocal(data: IUserSignup): Promise<String> {
+        const existentUser = await this.userRepo.findByEmail(data.email);
+        if (existentUser) throw new Conflict("This email is signed up");
 
-        if (myAccount)
-            throw new Conflict("This email has already been signed up");
+        // confrimation token
+        const ct = this.jwtService.createCt(data.id);
+        const hashedCt = await this.hashService.hashData(ct)
 
-        data.id = uuid();
-        data.password = await this.hashService.hash(data.password);
-        data.confirmationToken = this.jwtService.createAccessToken(data.id);
+        data.password = await this.hashService.hashData(data.password);
 
-        const newUser = await this.userRepo.create(data);
+        // username will be trated separately via websocket
+        const userData = await this.userRepo.create(data, hashedCt);
 
-        await this.sendEmailService.to(
-            data.name,
-            data.email,
-            data.confirmationToken,
-            "email"
-        );
+        const name = userData.first_name + userData.last_name;
 
-        return newUser.email
+        await this.emailService.send(name, userData.email, hashedCt, "email");
+        return userData.email;
     }
 
 
-    async authentication(data: IUserLogin) {
-        const account = await this.userRepo.findByEmail(data.email)
+    async signinLocal(data: IUserSignin) {
+        const user = await this.userRepo.findByEmail(data.email)
 
-        if (!account)
-            throw new NoContent("No register found")
+        if (!user) throw new NoContent(`Email: ${data.email} is not signed up`)
 
-        if (!account.verified)
-            throw new Forbidden("This account hasan't been verified yet")
+        const { id, email, password } = user;
 
-        const match = await this.hashService.compare(data.password, account.password)
+        const match = await this.hashService.compareData(data.password, password)
+        if (!match) throw new BadRequest("Passwords does not match");
 
-        if (!match)
-            throw new BadRequest("Password does not match");
+        const access_token = this.jwtService.createAT(id, email);
+        const refresh_token = this.jwtService.createRt(user.id);
 
-        const access_token = this.jwtService.createAccessToken(account.id);
-        const refresh_token = this.jwtService.createRefreshToken(account.id);
-
-        await this.tokenRepo.update(account.id, { refreshtoken: refresh_token });
-        return access_token;
+        await this.tokenRepo.update(id, { hashedRt: refresh_token });
+        return { access_token, refresh_token };
     }
 
-    async logout(req: Request) {
-        const authToken = req.headers.authorization.split(" ")[1];
-        const id = this.jwtService.decode(authToken);
-
-        const user = await this.userRepo.findById(id);
-        if (!user.verified)
-            throw new Unauthorized("Account not verified")
-
-        await this.tokenRepo.update(id, { refreshtoken: null })
-    }
-
-
-    async googleAccount(data: any) {
-        const myAccount = await this.userRepo.findByEmail(data.email)
-
-        if (myAccount) {
-            const access_token = this.jwtService.createAccessToken(myAccount.id);
-            const refresh_token = this.jwtService.createRefreshToken(myAccount.id)
-
-            await this.tokenRepo.update(
-                myAccount.id,
-                { refreshtoken: refresh_token }
-            );
-
-            return access_token;
-        }
-
-        data.id = uuid();
-        data.refreshtoken = this.jwtService.createRefreshToken(myAccount.id)
-
-        const newUser = await this.userRepo.googleCreate(data);
-        const access_token = this.jwtService.createAccessToken(newUser.id);
-        return access_token;
-    }
-
-    async verifyAccount(req: Request) {
-        const authToken = req.headers.authorization.split(" ")[1];
-
-        const id = this.jwtService.decode(authToken);
-        const user = await this.tokenRepo.find(id);
-
-        if (user.confirmationToken !== authToken)
-            throw new Forbidden("Invalid confirmation token");
-
-        await this.userRepo.update(id, { verified: true })
-        const refresh_token = this.jwtService.createRefreshToken(id);
-
-        await this.tokenRepo.update(id, {
-            confirmationToken: null,
-            refreshtoken: refresh_token
+    async logout(id: string) {
+        return await this.tokenRepo.update(id, {
+            hashedRt: null,
+            hashedCt: null,
         })
     }
 
-    async sendConfirmation(
+    async refreshToken(userId: string, refresh: string) {
+        const user = await this.tokenRepo.find(userId);
+        if (!user.hashedRt) throw new Unauthorized("Unauthorized access")
+
+        const match = await this.hashService.compareData(user.hashedRt, refresh);
+        if (!match) throw new Unauthorized("Unauthorized access");
+
+        const { id, email } = await this.userRepo.findById(userId);
+
+        const access_token = this.jwtService.createAT(id, email);
+        const refresh_token = this.jwtService.createRt(id);
+
+        if (access_token && refresh_token) return { access_token, refresh_token };
+    }
+
+    async google(data: IAuthGoogle) {
+        const user = await this.userRepo.findByEmail(data.email)
+
+        if (user) {
+            const access_token = this.jwtService.createAT(user.id, user.email);
+            const refresh_token = this.jwtService.createRt(user.id);
+
+            const hashedRt = await this.hashService.hashData(refresh_token);
+            if (hashedRt)
+                await this.tokenRepo.update(user.id, { hashedRt: hashedRt });
+
+            return { access_token, refresh_token };
+        }
+
+        const refresh_token = this.jwtService.createRt(data.id)
+        const access_token = this.jwtService.createAT(data.id, data.email);
+
+        const hashedRt = await this.hashService.hashData(refresh_token);
+        await this.userRepo.googleCreate(data, hashedRt);
+
+        return { access_token, refresh_token };
+    }
+
+    async VerifyLocal(userId: string, token: string) {
+        const tokens = await this.tokenRepo.find(userId);
+        if (!tokens.hashedCt) throw new Unauthorized("Unauthorized access");
+
+        const match = await this.hashService.compareData(tokens.hashedCt, token);
+        if (!match) throw new Unauthorized("Unauthorized access");
+
+        const { id, email } = await this.userRepo.findById(userId);
+
+        const access_token = this.jwtService.createAT(id, email);
+        const refresh_token = this.jwtService.createRt(id);
+
+        const hashedRt = await this.hashService.hashData(refresh_token);
+        await this.tokenRepo.update(id, { hashedRt: hashedRt })
+
+        if (access_token && refresh_token) return { access_token, refresh_token };
+    }
+
+
+    async sendVerification(
         email: string,
         template: "email" | "password"
     ) {
-        if (template !== "email" && template !== "password")
-            throw new Forbidden("A template is required")
+        const user = await this.userRepo.findByEmail(email);
 
-        const account = await this.userRepo.findByEmail(email);
+        if (!user?.email)
+            throw new BadRequest("Unable to send verification, since email is not signed up");
 
-        if (!account?.email)
-            throw new Forbidden("User not found");
+        const confirmation_token = this.jwtService.createCt(user.id);
+        const hashedCt = await this.hashService.hashData(confirmation_token);
 
-        if (template === "email") {
-            const newToken = this.jwtService.createAccessToken(account.id)
-            await this.tokenRepo.update(account.id, { confirmationToken: newToken });
+        await this.tokenRepo.update(user.id, { hashedCt: hashedCt });
 
-            await this.sendEmailService.to(
-                account.name,
-                account.email,
-                newToken,
-                template
-            );
-        }
-
-        if (template === "password") {
-            if (!account.verified)
-                throw new Forbidden("User not verified");
-
-            const newToken = this.jwtService.createAccessToken(account.id)
-            await this.tokenRepo.update(account.id, { resetPasswordToken: newToken });
-
-            await this.sendEmailService.to(
-                account.name,
-                account.email,
-                newToken,
-                template
-            );
-        }
+        const name = user.first_name + user.last_name;
+        await this.emailService.send(
+            name, user.email,
+            confirmation_token, template === "email" ? "email" : "password"
+        )
     }
 
-    async change(password: any, req: Request) {
-        const authToken = req.headers.authorization.split(" ")[1];
-        const id = this.jwtService.decode(authToken);
+    async passwordReset(password: string, userId: string) {
+        const hashedPassword = await this.hashService.hashData(password);
 
-        const user = await this.tokenRepo.find(id);
+        await this.userRepo.update(userId, { password: hashedPassword });
 
-        if (user.resetPasswordToken !== authToken)
-            throw new Forbidden("Invalid reset password token");
-
-        await this.userRepo.update(id, {
-            password: await this.hashService.hash(password)
-        });
-
-        await this.tokenRepo.update(id, {
-            resetPasswordToken: null,
-            refreshtoken: null
+        return await this.tokenRepo.update(userId, {
+            hashedRt: null,
+            hashedCt: null
         })
     }
 }

@@ -1,35 +1,35 @@
 import { MiddlewareConsumer, Module, NestModule, RequestMethod } from '@nestjs/common';
-import { AuthModule } from './jobs/auth/auth.module';
-import { UserModule } from './jobs/user/user.module';
-import { ProfileModule } from './jobs/profile/profile.module';
-import { PostModule } from './jobs/post/post.module';
-import { AccessMiddleware } from './middlewares/accessMiddleware';
-import { UserRepository } from './repositories/UserRepository';
-import { TokenRepository } from './repositories/TokenRepository';
+import { UserRepository } from './repositories/user';
+import { TokenRepository } from './repositories/token';
+import { Authmiddleware } from './middlewares/auth-middleware';
 import { HelperModule } from './helpers/helper.module';
-import { CommentModule } from './jobs/comment/comment.module';
-import { InteractionModule } from './jobs/interaction/interaction.module';
+import { PrismaModule } from './prisma/prisma.module';
+import { RepositoriesModule } from './repositories/repositories.module';
 
 @Module({
   imports: [
-    AuthModule, UserModule,
-    ProfileModule, PostModule,
-    HelperModule, CommentModule,
-    InteractionModule
+    HelperModule, PrismaModule,
+    RepositoriesModule
   ],
   providers: [UserRepository, TokenRepository]
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
-      .apply(AccessMiddleware)
+      .apply(Authmiddleware)
       .exclude(
-        { path: "auth/register", method: RequestMethod.POST },
-        { path: "auth/authentication", method: RequestMethod.POST },
+        { path: "auth/local/signup", method: RequestMethod.POST },
+        { path: "auth/local/signin", method: RequestMethod.POST },
         { path: "auth/google", method: RequestMethod.GET },
         { path: "auth/google/callback", method: RequestMethod.GET },
-        { path: "auth/send_confirmation/:email/:template", method: RequestMethod.GET },
+        { path: "auth/refresh", method: RequestMethod.POST },
+        { path: "auth/verification/:template", method: RequestMethod.GET },
+        { path: "auth/verify", method: RequestMethod.PUT },
+        { path: "auth/password-reset", method: RequestMethod.PUT },
+
         { path: "post/all", method: RequestMethod.GET },
+        { path: "post/:id?", method: RequestMethod.GET },
+
         { path: "profile/:id?", method: RequestMethod.GET },
       )
       .forRoutes("*")

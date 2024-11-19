@@ -1,43 +1,34 @@
 import { Injectable } from "@nestjs/common";
 import { JwtService } from "src/helpers/jwt.service";
 import { Request } from "express";
-import { CommentRepository } from "src/repositories/CommentRepository";
+import { CommentRepository } from "src/repositories/comment";
 
 
 @Injectable()
 export class CommentService {
-    constructor(
-        private jwtService: JwtService,
-        private commentRepo: CommentRepository
-    ) { }
+    constructor(private commentRepo: CommentRepository) { }
 
-    async CreateComment(
-        req: Request,
-        postId: number,
+    async postComment(
+        user_id: string,
+        post_id: number,
         text: string,
-        parentId?: number
+        parent_id?: number
     ) {
-        const access_token = req.headers.authorization.split(" ")[1];
-        const userId = this.jwtService.decode(access_token);
-        await this.commentRepo.create(userId, postId, text, parentId);
+        await this.commentRepo.create(user_id, post_id, text, parent_id);
     }
 
-    async UpdateComment(
-        req: Request,
-        commentId: number,
+    async updateComment(
+        user_id: string,
+        comment_id: number,
         text: string
     ) {
-        const access_token = req.headers.authorization.split(" ")[1];
-        const userId = this.jwtService.decode(access_token);
-        await this.commentRepo.update(userId, commentId, text)
+        await this.commentRepo.update(user_id, comment_id, text)
     }
 
-    async DeleteComment(
-        req: Request,
-        commentId: number,
+    async deleteComment(
+        user_id: string,
+        comment_id: number,
     ) {
-        const access_token = req.headers.authorization.split(" ")[1];
-        const userId = this.jwtService.decode(access_token);
-        await this.commentRepo.delete(userId, commentId)
+        await this.commentRepo.delete(user_id, comment_id)
     }
 }

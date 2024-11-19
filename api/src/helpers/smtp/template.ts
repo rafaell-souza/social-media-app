@@ -2,7 +2,7 @@ const generateTemplate = async (
     name: string,
     token: string
 ) => {
-    const confirmEmailTemplate = `
+    const emailTemplate = `
         <html>
         <body>
             <h2>Hello, ${name}!</h2>
@@ -15,7 +15,7 @@ const generateTemplate = async (
         </html>
     `;
 
-    const resetPasswordTemplate = `
+    const passTemplate = `
         <html>
         <body>
             <h2>Hello, ${name}!</h2>
@@ -29,7 +29,6 @@ const generateTemplate = async (
         </html>
     `;
 
-    return { confirmEmailTemplate, resetPasswordTemplate };
+    return { emailTemplate, passTemplate };
 };
-
 export default generateTemplate;

@@ -1,5 +1,5 @@
-import { Controller, Post, Get, Put, Body, Req, Res, Param, Delete } from "@nestjs/common";
-import { CommentDto } from "src/dtos/CommentDto";
+import { Controller, Post, Put, Body, Req, Res, Param, Delete } from "@nestjs/common";
+import { CommentDto } from "src/dto/CommentDto";
 import { Request, Response } from "express";
 import { CommentService } from "./comment.service";
 
@@ -7,47 +7,35 @@ import { CommentService } from "./comment.service";
 export class CommentController {
     constructor(private commentService: CommentService) { }
 
-    @Post("/:postId/:parentId?")
-    async NewComment(
-        @Body() commentDto: CommentDto,
-        @Res() res: Response,
-        @Req() req: Request,
-        @Param("postId") postId: string,
-        @Param("parentId") parentId?: string
+    @Post("/:post_id/:parent_id?")
+    async postComment(
+        @Body() dto: CommentDto,
+        @Req() req: any,
+        @Param("post_id") post_id: number,
+        @Param("parent_id") parent_id?: number
     ) {
-        await this.commentService.CreateComment(
-            req, Number(postId), commentDto.text, Number(parentId)
+        const userId: string = req.user.id;
+        return await this.commentService.postComment(
+            userId, post_id, dto.text, parent_id
         );
-        return res.status(201).json({
-            message: "New comment created",
-            success: true
-        })
     }
 
-    @Put("/:commentId")
-    async UpdateComment(
-        @Body() commentDto: CommentDto,
-        @Res() res: Response,
-        @Req() req: Request,
-        @Param("commentId") commentId: string,
+    @Put("/:comment_id")
+    async updateComment(
+        @Body() dto: CommentDto,
+        @Req() req: any,
+        @Param("comment_id") comment_id: number,
     ) {
-        await this.commentService.UpdateComment(req, Number(commentId), commentDto.text);
-        return res.status(200).json({
-            message: "Comment updated",
-            success: true
-        })
+        const userId: string = req.user.id;
+        return await this.commentService.updateComment(userId, comment_id, dto.text);
     }
 
-    @Delete("/:commentId")
-    async DeleteComment(
-        @Res() res: Response,
-        @Req() req: Request,
-        @Param("commentId") commentId: string,
+    @Delete("/:comment_id")
+    async deleteComment(
+        @Req() req: any,
+        @Param("commentId") comment_id: number,
     ) {
-        await this.commentService.DeleteComment(req, Number(commentId));
-        return res.status(200).json({
-            message: "Comment deleted",
-            success: true
-        })
+        const userId: string = req.user.id;
+        return await this.commentService.deleteComment(userId, comment_id);
     }
 }

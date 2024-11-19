@@ -1,43 +1,33 @@
-import { Controller, Req, Res, Get, Delete, Put, Body } from "@nestjs/common";
+import { Controller, Req, Get, Delete, Put, Body } from "@nestjs/common";
 import { UserService } from "./user.service";
-import { Request, Response } from "express";
-import UserResetPasswordDto from "src/dtos/UserResetPassword";
+import UserResetPasswordDto from "src/dto/UserResetPassword";
 
 @Controller("user")
 export class UserController {
     constructor(private userService: UserService) { }
 
     @Get()
-    async GetUserDatails(
-        @Res() res: Response,
-        @Req() req: Request
-    ) {
-        const data = await this.userService.GetUserDatails(req);
-        return res.status(200).json(data)
+    async getUserData(@Req() req: any) {
+        const userId: string = req.user.id;
+        return await this.userService.getUserData(userId);
     }
 
     @Delete()
     async DeleteUser(
-        @Res() res: Response,
-        @Req() req: Request
+        @Req() req: any
     ) {
-        await this.userService.DeleteUser(req);
-        return res.status(200).json({
-            message: "Account deleted successfully",
-            success: true
-        })
+        const userId: string = req.user.id;
+        const result = await this.userService.DeleteUser(userId);
+        return { success: result ? true : false }
     }
 
-    @Put("change_password")
+    @Put("password-reset")
     async UpdatePassword(
-        @Res() res: Response,
-        @Req() req: Request,
+        @Req() req: any,
         @Body() userResetPasswordDto: UserResetPasswordDto
     ) {
-        await this.userService.ResetPassword(req, userResetPasswordDto);
-        return res.status(200).json({
-            message: "New password set up successfully",
-            success: true
-        })
+        const userId: string = req.user.id;
+        await this.userService.ResetPassword(userId, userResetPasswordDto);
+        
     }
 }

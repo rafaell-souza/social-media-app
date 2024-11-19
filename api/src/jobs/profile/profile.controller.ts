@@ -1,29 +1,30 @@
-import { Body, Controller, Post, Req, Res, Param, UseGuards, Put, Get, HttpCode, Patch } from "@nestjs/common";
+import { Body, Controller, Req, Param, Get, Patch, UseGuards } from "@nestjs/common";
 import { ProfileService } from "./profile.service";
-import { Request, Response } from "express";
-import { ProfileDto } from "src/dtos/Profile-dto";
+import { UpdateProfileDto } from "src/dto/UpdateProfile.dto";
+import { JwtAuthOptional } from "src/guards/auth-optional.guard";
 
 @Controller('profile')
 export class ProfileController {
     constructor(private profileService: ProfileService) { }
 
     @Get("/:id?")
-    async GetProfile(
-        @Req() req: Request,
-        @Res() res: Response,
-        @Param("id") id?: string
+    @UseGuards(JwtAuthOptional)
+    async userProfile(
+        @Req() req: any,
+        @Param("id") id?: string // another person profile id
     ) {
-        const profile = await this.profileService.GetProfile(id, req);
-        return res.status(200).json(profile)
+        const userId = req?.user?.id; // current user id from token
+        const profile = await this.profileService.userProfile(id ? id : userId);
+        return profile
     }
 
     @Patch()
     async UpdateProfile(
-        @Body() profile_dto: ProfileDto,
-        @Req() req: Request,
-        @Res() res: Response
+        @Body() dto: UpdateProfileDto,
+        @Req() req: any,
     ) {
-        await this.profileService.UpdateProfile(req, profile_dto);
-        return res.status(200).send("User updated!");
+        const userId: string = req.user.id;
+        const result = await this.profileService.UpdateProfile(userId, dto);
+        return { success: result ? true : false }
     }
 }

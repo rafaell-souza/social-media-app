@@ -1,15 +1,13 @@
-import { Module, MiddlewareConsumer, NestModule, RequestMethod } from "@nestjs/common";
-import { HelperModule } from "src/helpers/helper.module";
+import { Module } from "@nestjs/common";
 import { PostController } from "./post.controller";
 import { PostService } from "./post.service";
-import { PostRepository } from "src/repositories/PostRepository";
-import { AccessMiddleware } from "src/middlewares/accessMiddleware";
-import { TokenRepository } from "src/repositories/TokenRepository";
-import { UserRepository } from "src/repositories/UserRepository";
+import { PostRepository } from "src/repositories/post";
+import { PrismaModule } from "src/prisma/prisma.module";
+import { HelperModule } from "src/helpers/helper.module";
 
 @Module({
-    imports: [HelperModule],
-    providers: [PostService, PostRepository, UserRepository, TokenRepository],
+    imports: [PrismaModule, HelperModule],
+    providers: [PostService, PostRepository],
     controllers: [PostController]
 })
 export class PostModule {}
