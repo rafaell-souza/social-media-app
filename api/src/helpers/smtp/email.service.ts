@@ -15,11 +15,15 @@ export class EmailService {
             emailTemplate
         } = await generateTemplate(name, token);
 
-        await transporter.sendMail({
-            to: email,
-            from: "No reply",
-            html: template === "email" ? emailTemplate : passTemplate
-        })
-
+        try {
+            await transporter.sendMail({
+                to: email,
+                from: `dev aplication`,
+                subject: "#verification",
+                html: template === "email" ? emailTemplate : passTemplate
+            })
+        } catch (error) {
+            console.error(error.message)
+        }
     }
 }

@@ -11,11 +11,10 @@ export class PostController {
     @Post()
     async createPost(
         @Req() req: any,
-        @Body() dto: CreatePostDto
+        @Body() dto: CreatePostDto,
     ) {
         const userId: string = req.user.id;
         return await this.postService.createPost(userId, dto);
-
     }
 
     @Get("all")

@@ -3,14 +3,14 @@ import { IsOptional, IsString, Length, Matches, MaxLength, MinLength } from "cla
 export class UpdateProfileDto {
     @IsOptional()
     @IsString()
-    @Length(2, 50)
+    @Length(1, 50)
     @Matches(/^[A-Za-zÀ-ÖØ-öø-ÿ0-9 ]+$/i)
 
     first_name?: string;
 
     @IsOptional()
     @IsString()
-    @Length(2, 50)
+    @Length(1, 50)
     @Matches(/^[A-Za-zÀ-ÖØ-öø-ÿ0-9 ]+$/i)
 
     last_name?: string;

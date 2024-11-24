@@ -6,23 +6,21 @@ import "dotenv/config";
 
 @Injectable()
 export class JwtRefreshGuard implements CanActivate {
-    refresh_secret = process.env.JWT_REFRESH_TOKEN_SECRET
+    refresh_secret = process.env.JWT_REFRESH_SECRET
     constructor(
         private jwtService: JwtService,
     ) { }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
-        const request = context.switchToHttp().getRequest<Request>();
+        const req = context.switchToHttp().getRequest<Request>();
 
-        const authHeader = request.headers.authorization;
-        if (!authHeader) throw new Unauthorized("Authorization header is missing")
-
-        const refresh_token = authHeader.split(" ")[1];
+        const refresh_token = req.headers?.authorization?.split(" ")[1];
         if (!refresh_token) throw new Unauthorized("Refresh token is missing")
 
-        const data = this.jwtService.jwtVerify(refresh_token, this.refresh_secret) as any
+        this.jwtService.jwtVerify(refresh_token, this.refresh_secret);
+        const decoded = this.jwtService.jwtDecode(refresh_token);
 
-        request.user = { id: data.id, email: data.email }
+        req.user = { id: decoded.sub, refresh: refresh_token }
         return true;
     }
 }

@@ -42,7 +42,9 @@ export class AuthService {
     async signinLocal(data: IUserSignin) {
         const user = await this.userRepo.findByEmail(data.email)
 
-        if (!user) throw new NoContent(`Email: ${data.email} is not signed up`)
+        if (!user) throw new NoContent(`Email: ${data.email} is not signed up`);
+
+        if (!user.verified) return;
 
         const { id, email, password } = user;
 
@@ -52,30 +54,31 @@ export class AuthService {
         const access_token = this.jwtService.createAT(id, email);
         const refresh_token = this.jwtService.createRt(user.id);
 
-        await this.tokenRepo.update(id, { hashedRt: refresh_token });
+        const hashedRt = await this.hashService.hashData(refresh_token);
+
+        await this.tokenRepo.update(id, { hashedRt: hashedRt });
         return { access_token, refresh_token };
     }
 
     async logout(id: string) {
         return await this.tokenRepo.update(id, {
             hashedRt: null,
-            hashedCt: null,
+            lastLogoutAt: new Date()
         })
     }
 
     async refreshToken(userId: string, refresh: string) {
         const user = await this.tokenRepo.find(userId);
-        if (!user.hashedRt) throw new Unauthorized("Unauthorized access")
+        if (!user.hashedRt)
+            throw new Unauthorized("You're not in possession of a refresh token")
 
-        const match = await this.hashService.compareData(user.hashedRt, refresh);
-        if (!match) throw new Unauthorized("Unauthorized access");
+        const match = await this.hashService.compareData(refresh, user.hashedRt);
+        if (!match) throw new Unauthorized("Unknwon refresh token");
 
         const { id, email } = await this.userRepo.findById(userId);
 
         const access_token = this.jwtService.createAT(id, email);
-        const refresh_token = this.jwtService.createRt(id);
-
-        if (access_token && refresh_token) return { access_token, refresh_token };
+        return access_token;
     }
 
     async google(data: IAuthGoogle) {
@@ -86,9 +89,8 @@ export class AuthService {
             const refresh_token = this.jwtService.createRt(user.id);
 
             const hashedRt = await this.hashService.hashData(refresh_token);
-            if (hashedRt)
-                await this.tokenRepo.update(user.id, { hashedRt: hashedRt });
 
+            await this.tokenRepo.update(user.id, { hashedRt: hashedRt })
             return { access_token, refresh_token };
         }
 
@@ -101,24 +103,10 @@ export class AuthService {
         return { access_token, refresh_token };
     }
 
-    async VerifyLocal(userId: string, token: string) {
-        const tokens = await this.tokenRepo.find(userId);
-        if (!tokens.hashedCt) throw new Unauthorized("Unauthorized access");
-
-        const match = await this.hashService.compareData(tokens.hashedCt, token);
-        if (!match) throw new Unauthorized("Unauthorized access");
-
-        const { id, email } = await this.userRepo.findById(userId);
-
-        const access_token = this.jwtService.createAT(id, email);
-        const refresh_token = this.jwtService.createRt(id);
-
-        const hashedRt = await this.hashService.hashData(refresh_token);
-        await this.tokenRepo.update(id, { hashedRt: hashedRt })
-
-        if (access_token && refresh_token) return { access_token, refresh_token };
+    async VerifyLocal(userId: string) {
+        await this.userRepo.update(userId, { verified: true });
+        await this.tokenRepo.update(userId, { hashedCt: null })
     }
-
 
     async sendVerification(
         email: string,
@@ -126,15 +114,14 @@ export class AuthService {
     ) {
         const user = await this.userRepo.findByEmail(email);
 
-        if (!user?.email)
-            throw new BadRequest("Unable to send verification, since email is not signed up");
+        if (!user?.email) throw new BadRequest("Unable to send verification");
 
         const confirmation_token = this.jwtService.createCt(user.id);
         const hashedCt = await this.hashService.hashData(confirmation_token);
 
         await this.tokenRepo.update(user.id, { hashedCt: hashedCt });
 
-        const name = user.first_name + user.last_name;
+        const name = `${user.first_name} ${user.last_name}`;
         await this.emailService.send(
             name, user.email,
             confirmation_token, template === "email" ? "email" : "password"

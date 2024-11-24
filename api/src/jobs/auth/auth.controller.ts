@@ -15,12 +15,14 @@ export class AuthController {
     constructor(private authService: AuthService) { }
 
     @Post("local/signup")
-    async signupLocal(@Body() dto: AuthCreateUserDto): Promise<String> {
+    async signupLocal(
+        @Body() dto: AuthCreateUserDto) {
         const user: IUserSignup = {
             id: uuid(),
             ...dto
         }
-        return await this.authService.signupLocal(user);
+        const email = await this.authService.signupLocal(user);
+        return { email: email }
     }
 
     @Post("local/signin")
@@ -29,11 +31,11 @@ export class AuthController {
         return await this.authService.signinLocal(dto);
     }
 
-    @Post("logout")
+    @Post("signout")
     @HttpCode(200)
     async logout(@Req() req: any) {
         const id = req.user.id;
-        return await this.authService.logout(id);
+        await this.authService.logout(id);
     }
 
     @Post("refresh")
@@ -41,7 +43,8 @@ export class AuthController {
     @HttpCode(200)
     async refreshToken(@Req() req: Request) {
         const { id, refresh } = req.user as any;
-        return await this.authService.refreshToken(id, refresh)
+        const access_token = await this.authService.refreshToken(id, refresh);
+        return { access_token: access_token }
     }
 
     @Get("google")
@@ -51,7 +54,6 @@ export class AuthController {
     @Get("google/callback")
     @UseGuards(AuthGuard("google"))
     async GoogleAuthRedirect(
-        @Res() res: Response,
         @Req() req: any
     ) {
         const data = {
@@ -69,10 +71,7 @@ export class AuthController {
     @UseGuards(JwtConfirmationGuard)
     async VerifyLocal(@Req() req: any) {
         const userId = req.user.id as string;
-        const token = req.user.token as string;
-
-        const verified = await this.authService.VerifyLocal(userId, token);
-        return { success: verified ? true : false };
+        return await this.authService.VerifyLocal(userId);
     }
 
 
@@ -83,10 +82,7 @@ export class AuthController {
     ) {
         const email = request.body.email;
         await this.authService.sendVerification(email, template);
-        return {
-            message: `A verification email was sent to: ${email}`,
-            success: true
-        }
+        return { message: `A verification was sent to: ${email}` }
     }
 
     @Put("password-reset")
@@ -96,7 +92,6 @@ export class AuthController {
         @Req() req: any
     ) {
         const id = req.user.id
-        const result = await this.authService.passwordReset(dto.password, id);
-        return { success: result ? true : false };
+        return await this.authService.passwordReset(dto.password, id);
     }
 }

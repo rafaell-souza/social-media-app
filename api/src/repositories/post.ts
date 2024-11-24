@@ -73,7 +73,6 @@ export class PostRepository {
                         text: true,
                         content: true,
                         parent_Id: true,
-                        children: true,
                         author: {
                             select: {
                                 id: true,
@@ -103,6 +102,44 @@ export class PostRepository {
                                     }
                                 }
                             }
+                        },
+                        children: {
+                            select: {
+                                id: true,
+                                text: true,
+                                content: true,
+                                parent_Id: true,
+                                author: {
+                                    select: {
+                                        id: true,
+                                        first_name: true,
+                                        last_name: true,
+                                        profile: {
+                                            select: {
+                                                photo: true
+                                            }
+                                        }
+                                    }
+                                },
+                                reactions: {
+                                    select: {
+                                        id: true,
+                                        comment_id: true,
+                                        User: {
+                                            select: {
+                                                id: true,
+                                                first_name: true,
+                                                last_name: true,
+                                                profile: {
+                                                    select: {
+                                                        photo: true
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                            }
                         }
                     }
                 },
@@ -118,7 +155,7 @@ export class PostRepository {
                 post_id: reaction.post_Id,
                 user: {
                     id: reaction.User.id,
-                    name: reaction.User.first_name + reaction.User.last_name,
+                    name: `${reaction.User.first_name} ${reaction.User.last_name}`,
                     photo: reaction.User.profile.photo
                 }
             })),
@@ -126,7 +163,7 @@ export class PostRepository {
             updatedAt: post.updatedAt,
             owner: {
                 id: post.owner.id,
-                name: post.owner.first_name + post.owner.last_name,
+                name: `${post.owner.first_name} ${post.owner.last_name}`,
                 photo: post.owner.profile.photo
             },
             comments: post.comments.map(comment => ({
@@ -136,34 +173,32 @@ export class PostRepository {
                 content: comment.content,
                 author: {
                     id: comment.author.id,
-                    name: comment.author.first_name + comment.author.last_name,
+                    name: `${comment.author.first_name} ${comment.author.last_name}`,
                     photo: comment.author.profile.photo
                 },
-                reactions: post.reactions.map(reaction => ({
+                reactions: comment.reactions.map(reaction => ({
                     id: reaction.id,
-                    post_id: reaction.post_Id,
                     user: {
                         id: reaction.User.id,
-                        name: reaction.User.first_name + reaction.User.last_name,
+                        name: `${reaction.User.first_name} ${reaction.User.last_name}`,
                         photo: reaction.User.profile.photo
                     }
                 })),
                 children: comment.children.map(children => ({
-                    id: comment.id,
-                    parent_id: comment.parent_Id,
-                    text: comment.text,
-                    content: comment.content,
+                    id: children.id,
+                    parent_id: children.parent_Id,
+                    text: children.text,
+                    content: children.content,
                     author: {
-                        id: comment.author.id,
-                        name: comment.author.first_name + comment.author.last_name,
-                        photo: comment.author.profile.photo
+                        id: children.author.id,
+                        name: `${children.author.first_name} ${children.author.last_name}`,
+                        photo: children.author.profile.photo
                     },
-                    reactions: post.reactions.map(reaction => ({
+                    reactions: children.reactions.map(reaction => ({
                         id: reaction.id,
-                        post_id: reaction.post_Id,
                         user: {
                             id: reaction.User.id,
-                            name: reaction.User.first_name + reaction.User.last_name,
+                            name: `${reaction.User.first_name} ${reaction.User.last_name}`,
                             photo: reaction.User.profile.photo
                         }
                     })),

@@ -15,7 +15,7 @@ export class TokenRepository {
     async update(id: string, data: ITokenUpdate) {
         return await this.prisma.token.update({
             where: { owner_id: id },
-            data
+            data: { ...data }
         });
     }
 }

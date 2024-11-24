@@ -1,17 +1,22 @@
 import { MiddlewareConsumer, Module, NestModule, RequestMethod } from '@nestjs/common';
-import { UserRepository } from './repositories/user';
-import { TokenRepository } from './repositories/token';
 import { Authmiddleware } from './middlewares/auth-middleware';
 import { HelperModule } from './helpers/helper.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { RepositoriesModule } from './repositories/repositories.module';
+import { AuthModule } from './jobs/auth/auth.module';
+import { UserModule } from './jobs/user/user.module';
+import { ProfileModule } from './jobs/profile/profile.module';
+import { PostModule } from './jobs/post/post.module';
+import { FollowerModule } from './jobs/follower/follower.module';
+import { CommentModule } from './jobs/comment/comment.module';
 
 @Module({
   imports: [
     HelperModule, PrismaModule,
-    RepositoriesModule
+    RepositoriesModule, AuthModule, UserModule,
+    ProfileModule, PostModule, FollowerModule,
+    CommentModule
   ],
-  providers: [UserRepository, TokenRepository]
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {

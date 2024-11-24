@@ -1,5 +1,6 @@
 import { Controller, Get, Delete, Post, Param, Req, Res } from "@nestjs/common";
 import { Response } from "express";
+import { BadRequest } from "src/exceptions/excepetion";
 import { FollowerRepository } from "src/repositories/follower";
 
 @Controller("follow")
@@ -12,6 +13,10 @@ export class FollowerController {
         @Req() req: any
     ) {
         const userId: string = req.user.id;
+
+        if (userId === following_id)
+            throw new BadRequest("Unable to execute this action")
+
         return await this.followerRepo.create(userId, following_id);
     }
 

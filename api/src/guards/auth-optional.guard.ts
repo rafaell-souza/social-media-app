@@ -6,21 +6,19 @@ import "dotenv/config";
 
 @Injectable()
 export class JwtAuthOptional implements CanActivate {
-    access_secret = process.env.JWT_ACCESS_TOKEN_SECRET
-    constructor(
-        private jwtService: JwtService,
-    ) {}
+    secret = process.env.JWT_ACCESS_SECRET
+    constructor(private jwtService: JwtService,) { }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
         const request = context.switchToHttp().getRequest<Request>();
 
-        const access_token = request.headers.authorization?.split(" ")[1];
+        const access_token = request.headers?.authorization?.split(" ")[1];
         if (!access_token) return true;
 
-        const data = this.jwtService.jwtVerify(access_token, this.access_secret) as any
-        if (!data) throw new Unauthorized("Unauthorized access token")
-
-        request.user = { id: data.id }
+        this.jwtService.jwtVerify(access_token, this.secret);
+        const decoded = this.jwtService.jwtDecode(access_token);
+        
+        request.user = { id: decoded.sub }
         return true;
     }
 }

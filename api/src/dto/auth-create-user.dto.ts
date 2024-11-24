@@ -3,14 +3,14 @@ import { IsEmail, IsNotEmpty, IsString, Length, Matches, MaxLength, MinLength, }
 export default class AuthCreateUserDto {
     @IsString()
     @IsNotEmpty({ message: "First name must have a valid value." })
-    @Length(5, 50)
+    @Length(1, 50)
     @Matches(/^[A-Za-zÀ-ÖØ-öø-ÿ0-9 ]+$/i)
 
     first_name: string;
 
     @IsString()
     @IsNotEmpty({ message: "Last name must have a valid value." })
-    @Length(5, 50)
+    @Length(1, 50)
     @Matches(/^[A-Za-zÀ-ÖØ-öø-ÿ0-9 ]+$/i)
 
     last_name: string

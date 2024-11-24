@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsOptional, IsString, Matches, MaxLength } from "class-validator";
+import { IsNotEmpty, IsString, Matches, MaxLength } from "class-validator";
 
 
 export class CreatePostDto {
@@ -7,8 +7,4 @@ export class CreatePostDto {
     @MaxLength(700)
     @Matches(/^[A-Za-zÀ-ÖØ-öø-ÿ0-9 \.,'"\(\)\+\=\&\{\};:><%\$#@\!\?\|\]\[\/\]_\*-]+$/i)
     text: string;
-
-    @IsString()
-    @IsOptional()
-    content?: string
 }

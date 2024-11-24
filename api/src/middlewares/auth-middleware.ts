@@ -4,13 +4,23 @@ import { JwtService } from "src/helpers/jwt.service";
 import { Forbidden, Unauthorized } from "src/exceptions/excepetion";
 import "dotenv/config";
 import { UserRepository } from "src/repositories/user";
+import { TokenRepository } from "src/repositories/token";
+import { compareAsc } from "date-fns";
+
+type Decode = {
+    sub: string,
+    email: string;
+    createdAt: string;
+}
 
 @Injectable()
 export class Authmiddleware implements NestMiddleware {
-    access_secret = process.env.JWT_ACCESS_TOKEN_SECRET
+    secret = process.env.JWT_ACCESS_SECRET
+
     constructor(
         private jwtService: JwtService,
         private userRepo: UserRepository,
+        private tokenRepo: TokenRepository
     ) { }
 
     async use(
@@ -18,23 +28,34 @@ export class Authmiddleware implements NestMiddleware {
         res: Response,
         next: NextFunction
     ) {
-        const authHeader = req.headers.authorization;
-        if (!authHeader) return next(new Unauthorized("Auth header is missing"));
+        const access_token = req.headers?.authorization?.split(" ")[1];
+        if (!access_token) return next(new Unauthorized("Access token is missing"));
 
-        const token = authHeader.split(" ")[1];
-        if (!token) return next(new Unauthorized("Access token is missing"));
+        try {
+            this.jwtService.jwtVerify(access_token, this.secret);
 
-        const data = this.jwtService.jwtVerify(token, this.access_secret) as any;
-        if (!data) throw new Unauthorized("Access token is expired/invalid")
+            const { sub, createdAt, email } =
+                this.jwtService.jwtDecode(access_token) as Decode
 
-        const isSignedup = await this.userRepo.findById(data.sub);
-        if (!isSignedup?.verified) return next(new Forbidden("User not identified"));
+            const { id } = await this.userRepo.findById(sub);
 
-        req.user = {
-            id: data.sub,
-            email: data.email,
-        };
+            const logout = await this.tokenRepo.find(id);
 
-        return next();
+            if (logout.lastLogoutAt) {
+                const lastLogout = compareAsc(
+                    new Date(createdAt),
+                    new Date(logout.lastLogoutAt)
+                ) >= 0;
+
+                if (!lastLogout)
+                    return next(new Unauthorized("Token's session was closed"));
+            }
+
+            req.user = { id: sub, email: email };
+            return next();
+
+        } catch (error) {
+            return next(error);
+        }
     }
 }

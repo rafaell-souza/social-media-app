@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import * as jwt from "jsonwebtoken";
 import "dotenv/config";
-import { format } from "date-fns";
+import { Unauthorized } from "src/exceptions/excepetion";
 
 @Injectable()
 export class JwtService {
@@ -16,7 +16,7 @@ export class JwtService {
         return jwt.sign({
             sub: id,
             email: email,
-            iat: format(new Date(), "Pp")
+            createdAt: new Date()
         }, this.access_secret, {
             expiresIn: "30m"
         })
@@ -26,7 +26,7 @@ export class JwtService {
         return jwt.sign({
             sub: id,
         }, this.confirmation_token, {
-            expiresIn: "5m"
+            expiresIn: "15m"
         })
     }
 
@@ -43,6 +43,10 @@ export class JwtService {
     }
 
     jwtVerify(token: string, secret: string) {
-        return jwt.verify(token, secret);
+        try {
+            return jwt.verify(token, secret);
+        } catch (error) {
+            throw new Unauthorized("The provided token is not valid")
+        }
     }
 }
